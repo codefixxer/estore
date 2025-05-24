@@ -1,0 +1,804 @@
+
+@extends('layouts.vendor.app')
+
+@section('title', translate('messages.order_report'))
+
+@push('css_or_js')
+@endpush
+
+@section('content')
+    <div class="content container-fluid">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-header-title">
+                <span class="page-header-icon">
+                    <img src="{{dynamicAsset('/public/assets/admin/img/report/new/order_report.png')}}" class="w--22" alt="">
+                </span>
+                <span>
+                    {{ translate('messages.order_report') }}
+                </span>
+            </h1>
+        </div>
+        <!-- End Page Header -->
+        
+        
+        
+        
+         <div class="card mb-20">
+        <div class="card-body">
+            <h4 class="">Search Data</h4>
+            <form method="get" id="filterForm">
+                <div class="row g-3">
+                    <div class="col-sm-6 col-md-3">
+                        <select class="form-control" name="week" id="weekSelect">
+                            <!-- Weeks will be populated by JavaScript -->
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-md-3 ml-auto">
+                        <button type="submit" class="btn btn-primary btn-block">Filter</button>
+                    </div>
+                </div>
+                <!-- Hidden inputs for actual form submission -->
+                <input type="hidden" name="filter" value="custom">
+                <input type="hidden" name="from" id="hiddenFrom">
+                <input type="hidden" name="to" id="hiddenTo">
+            </form>
+        </div>
+    </div>
+    
+    
+    
+    
+    
+
+<!--        <div class="card mb-20">-->
+<!--            <div class="card-body">-->
+<!--                <h4 class="">{{ translate('Search_Data') }}</h4>-->
+<!--                <form  method="get">-->
+
+<!--                    <div class="row g-3">-->
+<!--                        <div class="col-sm-6 col-md-3">-->
+<!--    <select class="form-control set-filter" name="filter"-->
+<!--            data-url="{{ url()->full() }}" data-filter="filter">-->
+<!--        <option value="all_time" {{ isset($filter) && $filter == 'all_time' ? 'selected' : '' }}>-->
+<!--            {{ translate('messages.All_Time') }}</option>-->
+<!--        <option value="this_year" {{ isset($filter) && $filter == 'this_year' ? 'selected' : '' }}>-->
+<!--            {{ translate('messages.This_Year') }}</option>-->
+<!--        <option value="previous_year"-->
+<!--            {{ isset($filter) && $filter == 'previous_year' ? 'selected' : '' }}>-->
+<!--            {{ translate('messages.Previous_Year') }}</option>-->
+<!--        <option value="this_month"-->
+<!--            {{ isset($filter) && $filter == 'this_month' ? 'selected' : '' }}>-->
+<!--            {{ translate('messages.This_Month') }}</option>-->
+<!--        <option value="this_week" {{ isset($filter) && $filter == 'this_week' ? 'selected' : '' }}>-->
+<!--            {{ translate('messages.This_Week') }}</option>-->
+        <!-- Add this new option -->
+<!--        <option value="week" {{ isset($filter) && $filter == 'week' ? 'selected' : '' }}>-->
+<!--            {{ translate('messages.Select_Week') }}</option>-->
+<!--        <option value="custom" {{ isset($filter) && $filter == 'custom' ? 'selected' : '' }}>-->
+<!--            {{ translate('messages.Custom') }}</option>-->
+<!--    </select>-->
+<!--</div>-->
+<!--                        @if (isset($filter) && $filter == 'custom')-->
+<!--                         <div class="col-sm-6 col-md-3">-->
+<!--                            <input type="date" name="from" id="from_date" class="form-control"-->
+<!--                                placeholder="{{ translate('Start_Date') }}"-->
+<!--                                value={{ isset($from) ? $from  : '' }} required>-->
+<!--                        </div>-->
+<!--                        <div class="col-sm-6 col-md-3">-->
+<!--                            <input type="date" name="to" id="to_date" class="form-control"-->
+<!--                                placeholder="{{ translate('End_Date') }}"-->
+<!--                                value={{ isset($to) ? $to  : '' }} required>-->
+<!--                        </div>-->
+<!--                        @endif-->
+<!--                        <div class="col-sm-6 col-md-3 ml-auto">-->
+<!--                            <button type="submit"-->
+<!--                                class="btn btn-primary btn-block">{{ translate('Filter') }}</button>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </form>-->
+<!--            </div>-->
+<!--        </div>-->
+
+        <div class="mb-20">
+            <div class="row g-2">
+                <!--<div class="col-sm-6 col-lg-4">-->
+                    <!--<a class="order--card h-100" href="#">-->
+                    <!--    <div class="d-flex justify-content-between align-items-center">-->
+                    <!--        <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">-->
+                    <!--            <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/schedule.png')}}" alt="dashboard" class="oder--card-icon">-->
+                    <!--            <span>{{ translate('Scheduled_Orders') }}</span>-->
+                    <!--        </h6>-->
+                    <!--        <span class="card-title" style="--base-clr:#0661CB">-->
+                    <!--            {{ $total_scheduled_count }}-->
+                    <!--        </span>-->
+                    <!--    </div>-->
+                    <!--</a>-->
+                <!--</div>-->
+                <div class="col-sm-6 col-lg-4">
+                    <a class="order--card h-100" href="#">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
+                                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/pending.png')}}" alt="dashboard" class="oder--card-icon">
+                                <!--<span>{{ translate('Pending_Orders') }}</span>-->
+                                <span>New Orders</span>
+                            </h6>
+                            <span class="card-title" style="--base-clr:#0661CB">
+                                {{ $total_pending_count }}
+                            </span>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-sm-6 col-lg-4">
+                    <a class="order--card h-100" href="#">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
+                                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/accepted.png')}}" alt="dashboard" class="oder--card-icon">
+                                <span>{{ translate('Accepted_Orders') }}</span>
+                            </h6>
+                            <span class="card-title" style="--base-clr:#0661CB">
+                                {{ $total_accepted_count }}
+                            </span>
+                        </div>
+                    </a>
+                </div>
+<!--@forelse($dailyTotals as $daily)-->
+<!--    <div>-->
+<!--        <strong>Day {{ $loop->iteration }}:</strong> -->
+<!--        Date: {{ $daily->day }} - -->
+<!--        Total Amount: {{ Helpers::format_currency($daily->total_amount) }}-->
+<!--    </div>-->
+<!--@empty-->
+<!--    <div>No order data available for the selected period</div>-->
+<!--@endforelse-->
+
+                <!--<div class="col-sm-6 col-lg-4">-->
+                <!--    <a class="order--card h-100" href="#">-->
+                <!--        <div class="d-flex justify-content-between align-items-center">-->
+                <!--            <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">-->
+                <!--                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/processing.png')}}" alt="dashboard" class="oder--card-icon">-->
+                <!--                <span>{{ translate('Processing_Orders') }}</span>-->
+                <!--            </h6>-->
+                <!--            <span class="card-title" style="--base-clr:#00AA6D">-->
+                <!--                {{ $total_progress_count }}-->
+                <!--            </span>-->
+                <!--        </div>-->
+                <!--    </a>-->
+                <!--</div>-->
+                <!--<div class="col-sm-6 col-lg-4">-->
+                <!--    <a class="order--card h-100" href="#">-->
+                <!--        <div class="d-flex justify-content-between align-items-center">-->
+                <!--            <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">-->
+                <!--                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/on-the-way.png')}}" alt="dashboard" class="oder--card-icon">-->
+                <!--                <span>{{ translate('Food_On_the_Way') }}</span>-->
+                <!--            </h6>-->
+                <!--            <span class="card-title" style="--base-clr:#00AA6D">-->
+                <!--                {{ $total_on_the_way_count }}-->
+                <!--            </span>-->
+                <!--        </div>-->
+                <!--    </a>-->
+                <!--</div>-->
+                <!--<div class="col-sm-6 col-lg-4">-->
+                <!--    <a class="order--card h-100" href="#">-->
+                <!--        <div class="d-flex justify-content-between align-items-center">-->
+                <!--            <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">-->
+                <!--                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/delivered.png')}}" alt="dashboard" class="oder--card-icon">-->
+                <!--                <span>{{  translate('Delivered') }}</span>-->
+                <!--            </h6>-->
+                <!--            <span class="card-title" style="--base-clr:#00AA6D">-->
+                <!--                {{$total_delivered_count}}-->
+                <!--            </span>-->
+                <!--        </div>-->
+                <!--    </a>-->
+                <!--</div>-->
+                <div class="col-sm-6 col-lg-4">
+                    <a class="order--card h-100" href="#">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
+                                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/canceled.png')}}" alt="dashboard" class="oder--card-icon">
+                                <span>{{ translate('Canceled') }}</span>
+                            </h6>
+                            <span class="card-title" style="--base-clr:#FF7500">
+                                {{ $total_canceled_count }}
+                            </span>
+                        </div>
+                    </a>
+                </div>
+                <!--<div class="col-sm-6 col-lg-4">-->
+                <!--    <a class="order--card h-100" href="#">-->
+                <!--        <div class="d-flex justify-content-between align-items-center">-->
+                <!--            <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">-->
+                <!--                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/failed.png')}}" alt="dashboard" class="oder--card-icon">-->
+                <!--                <span>{{ translate('Payment_Failed') }}</span>-->
+                <!--            </h6>-->
+                <!--            <span class="card-title" style="--base-clr:#FF7500">-->
+                <!--                {{ $total_failed_count }}-->
+                <!--            </span>-->
+                <!--        </div>-->
+                <!--    </a>-->
+                <!--</div>-->
+            <!--    <div class="col-sm-6 col-lg-4">-->
+            <!--        <a class="order--card h-100" href="#">-->
+            <!--            <div class="d-flex justify-content-between align-items-center">-->
+            <!--                <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">-->
+            <!--                    <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/refunded.png')}}" alt="dashboard" class="oder--card-icon">-->
+            <!--                    <span>{{ translate('Refunded') }}</span>-->
+            <!--                </h6>-->
+            <!--                <span class="card-title" style="--base-clr:#FF7500">-->
+            <!--                    {{ $total_refunded_count }}-->
+            <!--                </span>-->
+            <!--            </div>-->
+            <!--        </a>-->
+            <!--    </div>-->
+            <!--</div>-->
+        </div>
+
+        <!-- End Stats -->
+        <!-- Card -->
+        <div class="card mt-3">
+            <!-- Header -->
+            <div class="card-header border-0 py-2">
+                <div class="search--button-wrapper">
+                    <h3 class="card-title">
+                        {{ translate('messages.Total_Orders') }} <span
+                            class="badge badge-soft-secondary" id="countItems">{{ $orders->total() }}</span>
+                    </h3>
+                    <form  class="search-form">
+                        <!-- Search -->
+                        <div class="input--group input-group input-group-merge input-group-flush">
+                            <input name="search" type="search" class="form-control"  value="{{ request()->search ?? null }}"  placeholder="{{ translate('Search_by_Order_ID') }}">
+                            <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
+                        </div>
+                        <!-- End Search -->
+                    </form>
+                    <!-- Static Export Button -->
+                    <div class="hs-unfold ml-3">
+  <a class="js-hs-unfold-invoker btn btn-sm text-white dropdown-toggle export-btn font--sm"
+     href="javascript:;"
+     style="background-color: #377dff;"
+     onclick="window.print()">
+    <i class="tio-download-to mr-1"></i> Print
+  </a>
+</div>
+
+
+                    <!--    <div id="usersExportDropdown"-->
+                    <!--        class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right hs-unfold-content-initialized hs-unfold-css-animation animated hs-unfold-reverse-y hs-unfold-hidden">-->
+
+                    <!--        <span class="dropdown-header">{{ translate('download_options') }}</span>-->
+                    <!--        <a id="export-excel" class="dropdown-item"-->
+                    <!--            href="{{ route('vendor.report.order-report-export', ['type' => 'excel', request()->getQueryString()]) }}">-->
+                    <!--            <img class="avatar avatar-xss avatar-4by3 mr-2"-->
+                    <!--                src="{{ dynamicAsset('public/assets/admin/svg/components/excel.svg') }}"-->
+                    <!--                alt="Image Description">-->
+                    <!--            {{ translate('messages.excel') }}-->
+                    <!--        </a>-->
+                    <!--        <a id="export-csv" class="dropdown-item"-->
+                    <!--            href="{{ route('vendor.report.order-report-export', ['type' => 'csv', request()->getQueryString()]) }}">-->
+                    <!--            <img class="avatar avatar-xss avatar-4by3 mr-2"-->
+                    <!--                src="{{ dynamicAsset('public/assets/admin/svg/components/placeholder-csv-format.svg') }}"-->
+                    <!--                alt="Image Description">-->
+                    <!--            {{ translate('messages.csv') }}-->
+                    <!--        </a>-->
+
+                    <!--    </div>-->
+                    <!--</div>-->
+                    <!-- Static Export Button -->
+                </div>
+            </div>
+            <!-- End Header -->
+
+            <!-- Body -->
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-borderless middle-align __txt-14px">
+                        <thead class="thead-light white--space-false">
+                            <tr>
+                                <th class="border-top border-bottom word-nobreak">{{ translate('messages.sl') }}</th>
+                                <th class="border-top border-bottom word-nobreak">{{ translate('messages.order_id') }}</th>
+                                <th class="border-top border-bottom word-nobreak">{{ translate('messages.restaurant') }}</th>
+                                <th class="border-top border-bottom word-nobreak">{{ translate('messages.customer_name') }}</th>
+                                <th class="border-top border-bottom word-nobreak">{{ translate('messages.total_item_amount') }}</th>
+                                <th class="border-top border-bottom word-nobreak">{{ translate('messages.item_discount') }}</th>
+                                <th class="border-top border-bottom word-nobreak">{{ translate('messages.coupon_discount') }}</th>
+                                <th class="border-top border-bottom word-nobreak">{{ translate('messages.referral_discount') }}</th>
+                                <th class="border-top border-bottom word-nobreak">{{ translate('messages.discounted_amount') }}</th>
+                                <th class="border-top border-bottom text-center">{{ translate('messages.tax') }}</th>
+                                <th class="border-top border-bottom word-nobreak">{{ translate('messages.delivery_charge') }}</th>
+                                <th class="border-top border-bottom text-center">{{ \App\CentralLogics\Helpers::get_business_data('additional_charge_name')??translate('messages.additional_charge') }}</th>
+                                <th class="border-top border-bottom word-nobreak">{{ translate('messages.extra_packaging_amount') }}</th>
+                                <th class="border-top border-bottom word-nobreak text-right">{{ translate('messages.order_amount') }}</th>
+                                <th class="border-top border-bottom word-nobreak">{{ translate('messages.amount_received_by') }}</th>
+                                <th class="border-top border-bottom word-nobreak">{{ translate('messages.payment_method') }}</th>
+                                <th class="border-top border-bottom word-nobreak">{{ translate('messages.order_status') }}</th>
+                                <th class="border-top border-bottom text-center">{{ translate('messages.action') }}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="set-rows">
+                            @foreach ($orders as $key => $order)
+                                <tr class="status-{{ $order['order_status'] }} class-all">
+                                    <td class="">
+                                        {{ $key + $orders->firstItem() }}
+                                    </td>
+                                    <td class="table-column-pl-0">
+                                        <a
+                                            href="{{ route('vendor.order.details', ['id' => $order['id']]) }}">{{ $order['id'] }}</a>
+                                    </td>
+                                    <td  class="text-capitalize">
+                                        @if($order->restaurant)
+                                            {{Str::limit($order->restaurant->name,25,'...')}}
+                                        @else
+                                            <label class="badge badge-danger">{{ translate('messages.invalid') }}
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($order->customer)
+                                            <a class="text-body text-capitalize"
+                                                href="#">
+                                                <strong>{{ $order->customer['f_name'] . ' ' . $order->customer['l_name'] }}</strong>
+                                            </a>
+                                        @elseif($order->is_guest)
+                                             <?php
+                                        $customer_details = json_decode($order['delivery_address'],true);
+                                    ?>
+                                            <strong>{{$customer_details['contact_person_name']}}</strong>
+                                            <div>{{$customer_details['contact_person_number']}}</div>
+                                        @else
+                                            <label class="badge badge-danger">{{ translate('messages.invalid_customer_data') }}</label>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div class="text-right mw--85px">
+                                            <div>
+                                                {{ \App\CentralLogics\Helpers::number_format_short($order['order_amount']- $order['additional_charge'] - $order['dm_tips']-$order['total_tax_amount'] - $order['extra_packaging_amount']  -$order['delivery_charge']+$order['coupon_discount_amount'] + $order['restaurant_discount_amount'] + $order['ref_bonus_amount']) }}
+                                            </div>
+                                            @if ($order->payment_status == 'paid')
+                                                <strong class="text-success">
+                                                    {{ translate('messages.paid') }}
+                                                </strong>
+                                            @else
+                                                <strong class="text-danger">
+                                                    {{ translate('messages.unpaid') }}
+                                                </strong>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td class="text-center mw--85px">
+                                        {{ \App\CentralLogics\Helpers::number_format_short($order->details()->sum(DB::raw('discount_on_food * quantity'))) }}
+                                    </td>
+                                    <td class="text-center mw--85px">
+                                        {{ \App\CentralLogics\Helpers::number_format_short($order['coupon_discount_amount']) }}
+                                    </td>
+                                    <td class="text-center mw--85px">
+                                        {{ \App\CentralLogics\Helpers::number_format_short($order['ref_bonus_amount']) }}
+                                    </td>
+                                    <td class="text-center mw--85px">
+                                        {{ \App\CentralLogics\Helpers::number_format_short($order['coupon_discount_amount'] + $order['restaurant_discount_amount'] + $order['ref_bonus_amount']) }}
+                                    </td>
+                                    <td class="text-center mw--85px white-space-nowrap">
+                                        {{ \App\CentralLogics\Helpers::number_format_short($order['total_tax_amount']) }}
+                                    </td>
+                                    <td class="text-center mw--85px">
+                                        {{ \App\CentralLogics\Helpers::number_format_short($order['delivery_charge']) }}
+                                    </td>
+                                    <td class="text-center mw--85px">
+                                        {{ \App\CentralLogics\Helpers::number_format_short($order['additional_charge']) }}
+                                    </td>
+                                    <td class="text-center mw--85px">
+                                        {{ \App\CentralLogics\Helpers::number_format_short($order['extra_packaging_amount']) }}
+                                    </td>
+                                    <td>
+                                        <div class="text-right mw--85px">
+                                            <div>
+                                                {{ \App\CentralLogics\Helpers::number_format_short($order['order_amount']) }}
+                                            </div>
+                                            @if ($order->payment_status == 'paid')
+                                                <strong class="text-success">
+                                                    {{ translate('messages.paid') }}
+                                                </strong>
+                                            @else
+                                                <strong class="text-danger">
+                                                    {{ translate('messages.unpaid') }}
+                                                </strong>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td class="text-center mw--85px text-capitalize">
+                                        {{isset($order->transaction) ? translate(str_replace('_', ' ', $order->transaction->received_by))  : translate('messages.not_received_yet')}}
+                                    </td>
+                                    <td class="text-center mw--85px text-capitalize">
+                                            {{ translate(str_replace('_', ' ', $order['payment_method'])) }}
+                                    </td>
+                                    <td class="text-center mw--85px text-capitalize">
+                                        @if($order['order_status']=='pending')
+                                                <span class="badge badge-soft-info">
+                                                  {{translate('messages.pending')}}
+                                                </span>
+                                            @elseif($order['order_status']=='confirmed')
+                                                <span class="badge badge-soft-info">
+                                                  {{translate('messages.confirmed')}}
+                                                </span>
+                                            @elseif($order['order_status']=='processing')
+                                                <span class="badge badge-soft-warning">
+                                                  {{translate('messages.processing')}}
+                                                </span>
+                                            @elseif($order['order_status']=='picked_up')
+                                                <span class="badge badge-soft-warning">
+                                                  {{translate('messages.out_for_delivery')}}
+                                                </span>
+                                            @elseif($order['order_status']=='delivered')
+                                                <span class="badge badge-soft-success">
+                                                  {{$order?->order_type == 'dine_in' ? translate('messages.Completed') : translate('messages.delivered')}}
+                                                </span>
+                                            @elseif($order['order_status']=='failed')
+                                                <span class="badge badge-soft-danger">
+                                                  {{translate('messages.payment_failed')}}
+                                                </span>
+                                            @elseif($order['order_status']=='handover')
+                                                <span class="badge badge-soft-danger">
+                                                  {{translate('messages.handover')}}
+                                                </span>
+                                            @elseif($order['order_status']=='canceled')
+                                                <span class="badge badge-soft-danger">
+                                                  {{translate('messages.canceled')}}
+                                                </span>
+                                            @elseif($order['order_status']=='accepted')
+                                                <span class="badge badge-soft-danger">
+                                                  {{translate('messages.accepted')}}
+                                                </span>
+                                            @else
+                                                <span class="badge badge-soft-danger">
+                                                  {{translate(str_replace('_',' ',$order['order_status']))}}
+                                                </span>
+                                            @endif
+
+                                    </td>
+
+
+                                    <td>
+                                        <div class="btn--container justify-content-center">
+                                            <a class="ml-2 btn btn-sm btn--warning btn-outline-warning action-btn"
+                                                href="{{ route('vendor.order.details', ['id' => $order['id']]) }}">
+                                                <i class="tio-invisible"></i>
+                                            </a>
+                                            <a class="ml-2 btn btn-sm btn--primary btn-outline-primary action-btn"
+                                                href="{{ route('vendor.order.generate-invoice', ['id' => $order['id']]) }}">
+                                                <i class="tio-print"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <!-- End Table -->
+
+
+            </div>
+            <!-- End Body -->
+            @if (count($orders) !== 0)
+                <hr>
+            @endif
+            <div class="page-area px-4 pb-3">
+                {!! $orders->links() !!}
+            </div>
+            @if (count($orders) === 0)
+                <div class="empty--data">
+                    <img src="{{ dynamicAsset('/public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
+                    <h5>
+                        {{ translate('no_data_found') }}
+                    </h5>
+                </div>
+            @endif
+        </div>
+        <!-- End Card -->
+    </div>
+@endsection
+
+@push('script')
+@endpush
+
+@push('script_2')
+    <script src="{{ dynamicAsset('public/assets/admin') }}/vendor/chart.js/dist/Chart.min.js"></script>
+    <script src="{{ dynamicAsset('public/assets/admin') }}/vendor/chartjs-chart-matrix/dist/chartjs-chart-matrix.min.js">
+    </script>
+    <script src="{{ dynamicAsset('public/assets/admin') }}/js/hs.chartjs-matrix.js"></script>
+    <script src="{{dynamicAsset('public/assets/admin')}}/js/view-pages/vendor/report.js"></script>
+
+    <script>
+        $(document).on('ready', function() {
+
+
+
+            $('.js-data-example-ajax-2').select2({
+                ajax: {
+                    url: '{{ url('/') }}/admin/customer/select-list',
+                    data: function(params) {
+                        return {
+                            q: params.term, // search term
+                            all:true,
+                            @if (isset($zone))
+                                zone_ids: [{{ $zone->id }}],
+                            @endif
+                            @if (request('restaurant_id'))
+                                restaurant_id: {{ request('restaurant_id') }},
+                            @endif
+                            page: params.page
+                        };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: data
+                        };
+                    },
+                    __port: function(params, success, failure) {
+                        let $request = $.ajax(params);
+
+                        $request.then(success);
+                        $request.fail(failure);
+
+                        return $request;
+                    }
+                }
+            });
+        });
+    </script>
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const weekSelect = document.getElementById('weekSelect');
+        const filterForm = document.getElementById('filterForm');
+        const hiddenFrom = document.getElementById('hiddenFrom');
+        const hiddenTo = document.getElementById('hiddenTo');
+        
+        // Initialize the week dropdown
+        populateWeekDropdown();
+        
+        // Handle week selection change
+        weekSelect.addEventListener('change', function() {
+            // Get the selected week's dates
+            const selectedWeek = weekSelect.value;
+            const [startDate, endDate] = selectedWeek.split('|');
+            
+            // Set the hidden inputs
+            hiddenFrom.value = startDate;
+            hiddenTo.value = endDate;
+            
+            // Submit the form automatically
+            filterForm.submit();
+        });
+        
+        function populateWeekDropdown() {
+            const currentYear = new Date().getFullYear();
+            const today = new Date();
+            let weekNumber = getWeekNumber(today);
+            let date = new Date(currentYear, 0, 1);
+            
+            // Find the first Monday of the year
+            while (date.getDay() !== 1) {
+                date.setDate(date.getDate() + 1);
+            }
+            
+            // Create an array to store all weeks
+            const weeks = [];
+            
+            // Get current week dates for comparison
+            const currentWeekMonday = getMondayOfCurrentWeek();
+            const currentWeekSunday = new Date(currentWeekMonday);
+            currentWeekSunday.setDate(currentWeekMonday.getDate() + 6);
+            const currentWeekStartStr = formatDate(currentWeekMonday);
+            const currentWeekEndStr = formatDate(currentWeekSunday);
+            
+            // Check if there's a previously selected week in URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const selectedFrom = urlParams.get('from');
+            const selectedTo = urlParams.get('to');
+            let hasSelectedWeek = false;
+            
+            // Loop through all weeks of the year up to current week
+            while (date <= today) {
+                const startDate = new Date(date);
+                const endDate = new Date(date);
+                endDate.setDate(endDate.getDate() + 6);
+                
+                // Format dates as YYYY-MM-DD
+                const startDateStr = formatDate(startDate);
+                const endDateStr = formatDate(endDate);
+                
+                // Calculate week number
+                const currentWeekNumber = getWeekNumber(startDate);
+                
+                // Check if this week matches the selected week from URL
+                const isSelectedWeek = (selectedFrom && selectedTo && 
+                                      startDateStr === selectedFrom && 
+                                      endDateStr === selectedTo);
+                
+                // Check if this is the current week
+                const isCurrentWeek = (startDateStr === currentWeekStartStr && 
+                                      endDateStr === currentWeekEndStr);
+                
+                // Add to weeks array
+                weeks.push({
+                    weekNumber: currentWeekNumber,
+                    startDate: startDate,
+                    endDate: endDate,
+                    startDateStr: startDateStr,
+                    endDateStr: endDateStr,
+                    isCurrent: isCurrentWeek,
+                    isSelected: isSelectedWeek
+                });
+                
+                if (isSelectedWeek) hasSelectedWeek = true;
+                
+                // Move to next week
+                date.setDate(date.getDate() + 7);
+            }
+            
+            // Sort weeks in descending order (newest first)
+            weeks.sort((a, b) => b.startDate - a.startDate);
+            
+            // Add weeks to dropdown
+            weeks.forEach(week => {
+                const option = document.createElement('option');
+                option.value = `${week.startDateStr}|${week.endDateStr}`;
+                
+                let label;
+                if (week.isSelected) {
+                    label = `Selected Week (${formatDisplayDate(week.startDate)} - ${formatDisplayDate(week.endDate)})`;
+                } else if (week.isCurrent) {
+                    label = `Current Week (${formatDisplayDate(week.startDate)} - ${formatDisplayDate(week.endDate)})`;
+                } else {
+                    label = `Week ${week.weekNumber} (${formatDisplayDate(week.startDate)} - ${formatDisplayDate(week.endDate)})`;
+                }
+                
+                option.textContent = label;
+                option.selected = week.isSelected || (!hasSelectedWeek && week.isCurrent);
+                
+                weekSelect.appendChild(option);
+            });
+        }
+        
+        function getMondayOfCurrentWeek() {
+            const today = new Date();
+            const currentDay = today.getDay();
+            const diff = today.getDate() - currentDay + (currentDay === 0 ? -6 : 1); // adjust when day is Sunday
+            return new Date(today.setDate(diff));
+        }
+        
+        // Helper function to get ISO week number
+        function getWeekNumber(date) {
+            const d = new Date(date);
+            d.setHours(0, 0, 0, 0);
+            d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+            const week1 = new Date(d.getFullYear(), 0, 4);
+            return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+        }
+        
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        function formatDisplayDate(date) {
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const day = date.getDate();
+            const month = months[date.getMonth()];
+            return `${day} ${month}`;
+        }
+    });
+</script>
+    // <script>
+    //     document.addEventListener('DOMContentLoaded', function() {
+    //         const weekSelect = document.getElementById('weekSelect');
+    //         const filterForm = document.getElementById('filterForm');
+    //         const hiddenFrom = document.getElementById('hiddenFrom');
+    //         const hiddenTo = document.getElementById('hiddenTo');
+            
+    //         // Initialize the week dropdown
+    //         populateWeekDropdown();
+            
+    //         // Handle form submission
+    //         filterForm.addEventListener('submit', function(e) {
+    //             // Get the selected week's dates
+    //             const selectedWeek = weekSelect.value;
+    //             const [startDate, endDate] = selectedWeek.split('|');
+                
+    //             // Set the hidden inputs
+    //             hiddenFrom.value = startDate;
+    //             hiddenTo.value = endDate;
+    //         });
+            
+    //         function populateWeekDropdown() {
+    //             const currentYear = new Date().getFullYear();
+    //             const today = new Date();
+    //             let weekNumber = getWeekNumber(today);
+    //             let date = new Date(currentYear, 0, 1);
+                
+    //             // Find the first Monday of the year
+    //             while (date.getDay() !== 1) {
+    //                 date.setDate(date.getDate() + 1);
+    //             }
+                
+    //             // Create an array to store all weeks
+    //             const weeks = [];
+                
+    //             // Loop through all weeks of the year up to current week
+    //             while (date <= today) {
+    //                 const startDate = new Date(date);
+    //                 const endDate = new Date(date);
+    //                 endDate.setDate(endDate.getDate() + 6);
+                    
+    //                 // Format dates as YYYY-MM-DD
+    //                 const startDateStr = formatDate(startDate);
+    //                 const endDateStr = formatDate(endDate);
+                    
+    //                 // Calculate week number
+    //                 const currentWeekNumber = getWeekNumber(startDate);
+                    
+    //                 // Add to weeks array
+    //                 weeks.push({
+    //                     weekNumber: currentWeekNumber,
+    //                     startDate: startDate,
+    //                     endDate: endDate,
+    //                     startDateStr: startDateStr,
+    //                     endDateStr: endDateStr,
+    //                     isCurrent: (date <= today && endDate >= today)
+    //                 });
+                    
+    //                 // Move to next week
+    //                 date.setDate(date.getDate() + 7);
+    //             }
+                
+    //             // Sort weeks in descending order (newest first)
+    //             weeks.sort((a, b) => b.startDate - a.startDate);
+                
+    //             // Add weeks to dropdown
+    //             weeks.forEach(week => {
+    //                 const option = document.createElement('option');
+    //                 option.value = `${week.startDateStr}|${week.endDateStr}`;
+                    
+    //                 if (week.isCurrent) {
+    //                     option.textContent = `Current Week (${formatDisplayDate(week.startDate)} - ${formatDisplayDate(week.endDate)})`;
+    //                     option.selected = true; // Select current week by default
+    //                 } else {
+    //                     option.textContent = `Week ${week.weekNumber} (${formatDisplayDate(week.startDate)} - ${formatDisplayDate(week.endDate)})`;
+    //                 }
+                    
+    //                 weekSelect.appendChild(option);
+    //             });
+    //         }
+            
+    //         // Helper function to get ISO week number
+    //         function getWeekNumber(date) {
+    //             const d = new Date(date);
+    //             d.setHours(0, 0, 0, 0);
+    //             d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+    //             const week1 = new Date(d.getFullYear(), 0, 4);
+    //             return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+    //         }
+            
+    //         function formatDate(date) {
+    //             const year = date.getFullYear();
+    //             const month = String(date.getMonth() + 1).padStart(2, '0');
+    //             const day = String(date.getDate()).padStart(2, '0');
+    //             return `${year}-${month}-${day}`;
+    //         }
+            
+    //         function formatDisplayDate(date) {
+    //             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    //             const day = date.getDate();
+    //             const month = months[date.getMonth()];
+    //             return `${day} ${month}`;
+    //         }
+    //     });
+    // </script>
+@endpush
+
