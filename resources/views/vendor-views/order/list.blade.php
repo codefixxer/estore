@@ -236,20 +236,32 @@
                             <!-- Date Filter -->
 
                             @if (str_replace('_', ' ', $status) != 'pending')
-                                <div class="mr-2">
-                                    <form id="dateFilterForm" class="form-inline">
-                                        <div class="form-group position-relative d-flex align-items-center">
-                                            <!-- Actual date input -->
-                                            <input type="date" name="filter_date" id="filter_date" class="form-control pr-5"
-                                                value="{{ request()->filter_date ?? \Carbon\Carbon::now('Europe/Dublin')->format('Y-m-d') }}" />
+                  {{-- always show this form, regardless of status --}}
+<div class="mr-2">
+  <form id="dateFilterForm"
+        class="form-inline"
+        method="GET"
+        action="{{ route('vendor.order.list', ['status' => $st]) }}">
+    <div class="form-group position-relative d-flex align-items-center">
+      <input
+        type="date"
+        name="filter_date"
+        id="filter_date"
+        class="form-control pr-5"
+        value="{{ $filterDate ?? \Carbon\Carbon::now('Europe/Dublin')->format('Y-m-d') }}"
+        onchange="this.form.submit()"
+      />
 
-                                            <!-- Overlay span shown only when today -->
-                                            <span id="todayLabel"
-                                                style="position: absolute; left: 12px; color: gray; pointer-events: none; display: none;">
-                                                Today
-                                            </span>
-                                        </div>
-                                    </form>
+      <span id="todayLabel"
+            style="position:absolute; left:12px; color:gray; pointer-events:none;
+                   {{ ($filterDate ?? now('Europe/Dublin')->format('Y-m-d')) === now('Europe/Dublin')->format('Y-m-d')
+                       ? 'display:inline' : 'display:none' }}">
+        Today
+      </span>
+    </div>
+  </form>
+</div>
+
                             @endif
                             <script>
                                 document.addEventListener('DOMContentLoaded', function() {
@@ -284,6 +296,38 @@
                                     form.addEventListener('submit', function(e) {
                                         e.preventDefault(); // only if you want to stop submission
                                     });
+                                });
+
+
+
+
+                                $(document).ready(function() {
+                                    // Auto-submit form when date changes
+                                    $('#filter_date').change(function() {
+                                        let url = new URL(window.location.href);
+                                        let selectedDate = $(this).val();
+
+                                        if (selectedDate) {
+                                            url.searchParams.set('filter_date', selectedDate);
+                                        } else {
+                                            url.searchParams.delete('filter_date');
+                                        }
+
+                                        // Remove page parameter to go back to first page
+                                        url.searchParams.delete('page');
+
+                                        window.location.href = url.toString();
+                                    });
+
+                                    // Initialize with current date from URL or today's date
+                                    const urlParams = new URLSearchParams(window.location.search);
+                                    const today = new Date().toISOString().split('T')[0];
+
+                                    if (urlParams.has('filter_date')) {
+                                        $('#filter_date').val(urlParams.get('filter_date'));
+                                    } else {
+                                        $('#filter_date').val(today);
+                                    }
                                 });
                             </script>
 
@@ -386,8 +430,8 @@
                                     {{ $key + $orders->firstItem() }}
                                 </td>
                                 <td class="table-column-pl-0">
-                                    <a href="{{ route('vendor.order.details', ['id' => $order['id']]) }}"
-                                        class="text-hover">{{ $order['id'] }}</a>
+                                    <a class="text-hover  print-invoice-btn" href="#"
+                                        data-order-id="{{ $order['id'] }}">{{ $order['id'] }}</a>
                                 </td>
                                 <td>
                                     <span class="d-block">
@@ -401,18 +445,30 @@
                                     $iso = \Carbon\Carbon::parse($order->schedule_at)->format('Y-m-d\TH:i');
                                 @endphp
 
-                                <td>
-                                    @php
-                                        $iso = \Carbon\Carbon::parse($order->schedule_at)->format('Y-m-d\TH:i');
-                                    @endphp
+                         <td>
+    @php
+        $iso = \Carbon\Carbon::parse($order->schedule_at)->format('Y-m-d\TH:i');
+    @endphp
 
-                                    <a href="javascript:void(0)" class="open-reschedule text-decoration-underline"
-                                        data-route="{{ route('vendor.order.reschedule', $order->id) }}"
-                                        data-iso="{{ $iso }}">
-                                        {{ \Carbon\Carbon::parse($order->schedule_at)->format('d M Y ' . config('timeformat')) }}
-                                    </a>
+    @if ($order->order_status === 'pending')
+        <a href="javascript:void(0)" class="open-reschedule text-decoration-underline"
+           data-route="{{ route('vendor.order.reschedule', $order->id) }}"
+           data-iso="{{ $iso }}">
+           {{ \Carbon\Carbon::parse($order->schedule_at)->format('d M Y ' . config('timeformat')) }}
+        </a>
 
-                                </td>
+    @elseif($order->order_status === 'confirmed' && \Carbon\Carbon::now()->lte(\Carbon\Carbon::parse($order->confirmed)->addMinutes(30)))
+        <a href="javascript:void(0)" class="open-reschedule text-decoration-underline"
+           data-route="{{ route('vendor.order.reschedule', $order->id) }}"
+           data-iso="{{ $iso }}">
+           {{ \Carbon\Carbon::parse($order->schedule_at)->format('d M Y ' . config('timeformat')) }}
+        </a>
+
+    @else
+        {{ \Carbon\Carbon::parse($order->schedule_at)->format('d M Y ' . config('timeformat')) }}
+    @endif
+</td>
+
 
                                 <td>
                                     @if ($order->is_guest)
@@ -422,15 +478,13 @@
                                         <strong>{{ $customer_details['contact_person_name'] }}</strong>
                                         <div>{{ $customer_details['contact_person_number'] }}</div>
                                     @elseif($order->customer)
-                                        <a class="text-body text-capitalize"
-                                            href="{{ route('vendor.order.details', ['id' => $order['id']]) }}">
+                                        
                                             <span class="d-block font-semibold">
                                                 {{ $order->customer['f_name'] . ' ' . $order->customer['l_name'] }}
                                             </span>
                                             <span class="d-block">
                                                 {{ $order->customer['phone'] }}
                                             </span>
-                                        </a>
                                     @else
                                         <label
                                             class="badge badge-danger">{{ translate('messages.invalid_customer_data') }}</label>
@@ -519,10 +573,10 @@
 
                                 <td>
                                     <div class="btn--container justify-content-center">
-                                        <a class="btn action-btn btn--warning btn-outline-warning"
+                                        {{-- <a class="btn action-btn btn--warning btn-outline-warning"
                                             href="{{ route('vendor.order.details', ['id' => $order['id']]) }}">
                                             <i class="tio-visible-outlined"></i>
-                                        </a>
+                                        </a> --}}
                                         <a class="btn action-btn btn--primary btn-outline-primary print-invoice-btn"
                                             href="#" data-order-id="{{ $order['id'] }}">
                                             <i class="tio-print"></i>
@@ -546,8 +600,7 @@
             @endif
             <!-- End Table -->
 
-            <!-- Footer -->
-            <div class="card-footer">
+    <div class="card-footer">
                 <!-- Pagination -->
                 <div class="row justify-content-center justify-content-sm-between align-items-sm-center">
                     <div class="col-sm-auto">
@@ -611,7 +664,7 @@
                 </div>
             </div>
         </div>
-       <div class="modal fade" id="rescheduleModal" tabindex="-1" aria-hidden="true">
+     <div class="modal fade" id="rescheduleModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-sm">
     <div class="modal-content">
       <form id="rescheduleForm" method="POST">
@@ -623,14 +676,10 @@
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label for="newSchedule">{{ translate('messages.new_date_time') }}</label>
-            <input
-              type="datetime-local"
-              id="newSchedule"
-              name="schedule_at"
-              class="form-control"
-              required
-            >
+            <label for="newScheduleTime">{{ translate('messages.new_time') }}</label>
+            <select id="newScheduleTime" name="schedule_at" class="form-control" required>
+              <!-- Options will be dynamically added by JS -->
+            </select>
           </div>
         </div>
         <div class="modal-footer">
@@ -646,27 +695,136 @@
   </div>
 </div>
 
+
     @endsection
 
     @push('script_2')
 
-
 <script>
-  $(function(){
-    $(document).on('click', '.open-reschedule', function(){
-      let btn   = $(this),
-          route = btn.data('route'),
-          iso   = btn.data('iso');
+    $(function() {
+  function pad(num) {
+    return num.toString().padStart(2, '0');
+  }
 
-      $('#rescheduleForm')
-        .attr('action', route)
-        .find('#newSchedule')
-        .val(iso);
+  function formatTime24To12(h24, m) {
+    const ampm = h24 >= 12 ? 'PM' : 'AM';
+    let h12 = h24 % 12;
+    if (h12 === 0) h12 = 12;
+    return h12 + ':' + pad(m) + ' ' + ampm;
+  }
 
-      $('#rescheduleModal').modal('show');
-    });
+  function roundUpToNextFiveMinutes(date) {
+    const ms = 1000 * 60 * 5;
+    return new Date(Math.ceil(date.getTime() / ms) * ms);
+  }
+
+  function generateTimeOptions(startTime) {
+    const options = [];
+    const endTime = new Date(startTime);
+    endTime.setHours(22, 0, 0, 0); // 10:00 PM exactly
+
+    let current = new Date(startTime);
+
+    while (current <= endTime) {
+      const h = current.getHours();
+      const m = current.getMinutes();
+      const value = pad(h) + ':' + pad(m);
+      const display = formatTime24To12(h, m);
+      options.push({ value, display });
+      current = new Date(current.getTime() + 5 * 60 * 1000); // add 5 minutes
+    }
+    return options;
+  }
+
+  $(document).on('click', '.open-reschedule', function() {
+    const btn = $(this);
+    const route = btn.data('route');
+    const iso = btn.data('iso'); // example: 2025-05-27T20:23
+
+    $('#rescheduleForm').attr('action', route);
+
+    // Extract time part and round up to next 5 minutes
+    if (iso) {
+      const timePart = iso.split('T')[1]; // e.g. "20:23"
+      const [hour, minute] = timePart.split(':').map(Number);
+
+      // Create a Date object today with that time
+      const now = new Date();
+      const selectedTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute);
+
+      const roundedTime = roundUpToNextFiveMinutes(selectedTime);
+
+      // Generate options from rounded time to 10 PM
+      const options = generateTimeOptions(roundedTime);
+
+      const $select = $('#newScheduleTime');
+      $select.empty();
+      options.forEach(opt => {
+        $select.append(`<option value="${opt.value}">${opt.display}</option>`);
+      });
+
+      // Select first option (which is roundedTime)
+      if (options.length > 0) {
+        $select.val(options[0].value);
+      }
+    }
+
+    // Show modal
+    $('#rescheduleModal').modal('show');
   });
+
+  // On submit, convert selected time back to full ISO datetime with today's date
+  $('#rescheduleForm').on('submit', function(e) {
+    e.preventDefault();
+
+    const selectedTime = $('#newScheduleTime').val(); // "HH:mm"
+
+    if (!selectedTime) {
+      alert('Please select a time');
+      return;
+    }
+
+    // Build ISO datetime string with today's date + selected time + seconds "00"
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = pad(today.getMonth() + 1);
+    const day = pad(today.getDate());
+    const isoDatetime = `${year}-${month}-${day}T${selectedTime}:00`;
+
+    // Create or update hidden input 'schedule_at' with value isoDatetime
+    if ($('#schedule_at').length === 0) {
+      $('<input>').attr({
+        type: 'hidden',
+        id: 'schedule_at',
+        name: 'schedule_at',
+        value: isoDatetime
+      }).appendTo('#rescheduleForm');
+    } else {
+      $('#schedule_at').val(isoDatetime);
+    }
+
+    // Submit the form
+    this.submit();
+  });
+});
+
 </script>
+        <script>
+            $(function() {
+                $(document).on('click', '.open-reschedule', function() {
+                    let btn = $(this),
+                        route = btn.data('route'),
+                        iso = btn.data('iso');
+
+                    $('#rescheduleForm')
+                        .attr('action', route)
+                        .find('#newSchedule')
+                        .val(iso);
+
+                    $('#rescheduleModal').modal('show');
+                });
+            });
+        </script>
 
 
         <script>
@@ -789,34 +947,7 @@
 
             // date control 
 
-            $(document).ready(function() {
-                // Auto-submit form when date changes
-                $('#filter_date').change(function() {
-                    let url = new URL(window.location.href);
-                    let selectedDate = $(this).val();
 
-                    if (selectedDate) {
-                        url.searchParams.set('filter_date', selectedDate);
-                    } else {
-                        url.searchParams.delete('filter_date');
-                    }
-
-                    // Remove page parameter to go back to first page
-                    url.searchParams.delete('page');
-
-                    window.location.href = url.toString();
-                });
-
-                // Initialize with current date from URL or today's date
-                const urlParams = new URLSearchParams(window.location.search);
-                const today = new Date().toISOString().split('T')[0];
-
-                if (urlParams.has('filter_date')) {
-                    $('#filter_date').val(urlParams.get('filter_date'));
-                } else {
-                    $('#filter_date').val(today);
-                }
-            });
 
 
 

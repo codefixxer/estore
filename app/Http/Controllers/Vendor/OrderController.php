@@ -41,8 +41,6 @@ public function reschedule(Request $request, $id)
     Toastr::success(translate('messages.order_schedule_updated'));
     return back();
 }
-
-
 public function list($status, Request $request)
 {
     $reasons = OrderCancelReason::latest()
@@ -67,9 +65,16 @@ public function list($status, Request $request)
         ->where('restaurant_id', Helpers::get_restaurant_id())
         ->update(['checked' => 1]);
 
-    // Base query
+    // Use filter_date from request, or null if not present
+    $filterDate = $request->get('filter_date');
+
+    // If no filter_date, default to today’s date (Europe/Dublin timezone)
+    if (!$filterDate) {
+        $filterDate = \Carbon\Carbon::now('Europe/Dublin')->format('Y-m-d');
+    }
+
     $query = Order::with('customer')
-        // New / Pending
+        // Pending
         ->when($status === 'pending', function($q) use ($selfDelivery) {
             if (config('order_confirmation_model') === 'restaurant' || $selfDelivery) {
                 return $q->where('order_status','pending');
@@ -77,7 +82,7 @@ public function list($status, Request $request)
             return $q->where('order_status','pending')
                      ->whereIn('order_type',['take_away','dine_in']);
         })
-        // Accepted / Confirmed
+        // Confirmed
         ->when($status === 'confirmed', function($q) {
             return $q->whereIn('order_status',['confirmed','delivered','cooking','handover'])
                      ->whereNotNull('confirmed');
@@ -86,17 +91,14 @@ public function list($status, Request $request)
         ->when($status === 'canceled', function($q) {
             return $q->where('order_status','canceled');
         })
-        // **Failed**
+        // Failed
         ->when($status === 'failed', function($q) {
-            // only those with a failure timestamp
             return $q->whereNotNull('failed');
-            // if you only want failures that happened today:
-            // return $q->whereDate('failed', Carbon::today());
         })
         // All
         ->when($status === 'all', function($q) use ($selfDelivery) {
             return $q->where(function($sub) use ($selfDelivery) {
-                $excluded = ['failed','canceled','refund_requested','refunded'];
+                $excluded = ['failed','refund_requested','refunded'];
                 if (!($selfDelivery || config('order_confirmation_model')==='restaurant')) {
                     array_unshift($excluded,'pending');
                 }
@@ -107,10 +109,8 @@ public function list($status, Request $request)
                                            ->whereNotNull('subscription_id'));
             });
         })
-        // Scheduling window on pending / confirmed / canceled
-        ->when(in_array($status,['pending','confirmed','canceled']), function($q){
-            return $q->OrderScheduledIn(30);
-        })
+        // Apply filter date always (either requested date or today)
+        ->whereDate('created_at', $filterDate)
         // Keyword search
         ->when(count($key)>0, function($q) use ($key) {
             return $q->where(fn($q2)=> collect($key)
@@ -119,7 +119,6 @@ public function list($status, Request $request)
                                      ->orWhere('transaction_reference','like',"%{$word}%")));
         });
 
-    // Finalize pagination
     $orders = $query
         ->Notpos()
         ->hasSubscriptionToday()
@@ -127,7 +126,6 @@ public function list($status, Request $request)
         ->orderBy('created_at','desc')
         ->paginate(config('default_pagination'));
 
-    // Pass a small counts object for the sidebar badges
     $counts = (object)[
         'all'       => Order::where('restaurant_id',Helpers::get_restaurant_id())
                             ->Notpos()->hasSubscriptionToday()
@@ -145,7 +143,6 @@ public function list($status, Request $request)
                             ->count(),
         'failed'    => Order::where('restaurant_id',Helpers::get_restaurant_id())
                             ->whereNotNull('failed')
-                            // ->whereDate('failed', Carbon::today())
                             ->Notpos()
                             ->count(),
         'canceled'  => Order::where('restaurant_id',Helpers::get_restaurant_id())
@@ -159,7 +156,7 @@ public function list($status, Request $request)
     $status = translate('messages.' . $status);
 
     return view('vendor-views.order.list', compact(
-        'orders','status','st','reasons','counts'
+        'orders','status','st','reasons','counts','filterDate'
     ));
 }
 

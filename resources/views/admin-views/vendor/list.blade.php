@@ -208,37 +208,6 @@
                                 <!-- End Search -->
                             </form>
 
-                            <!-- Export Button Static -->
-                   <!--         <div class="hs-unfold ml-3">-->
-                   <!--             <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle btn export-btn btn-outline-primary btn--primary font--sm" href="javascript:"-->
-                   <!--                 data-hs-unfold-options='{-->
-                   <!--                     "target": "#usersExportDropdown",-->
-                   <!--                     "type": "css-animation"-->
-                   <!--                 }'>-->
-                   <!--                 <i class="tio-download-to mr-1"></i> {{translate('messages.export')}}-->
-                   <!--             </a>-->
-
-                   <!--             <div id="usersExportDropdown"-->
-                   <!--                     class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">-->
-
-                   <!--                 <span class="dropdown-header">{{translate('messages.download_options')}}</span>-->
-                   <!--                 <a target="__blank" id="export-excel" class="dropdown-item" href="{{route('admin.restaurant.restaurants-export', ['type'=>'excel',-->
-                   <!--request()->getQueryString()])}}">-->
-                   <!--                     <img class="avatar avatar-xss avatar-4by3 mr-2"-->
-                   <!--                     src="{{dynamicAsset('public/assets/admin')}}/svg/components/excel.svg"-->
-                   <!--                     alt="Image Description">-->
-                   <!--                     {{translate('messages.excel')}}-->
-                   <!--                 </a>-->
-
-                   <!--                 <a id="export-excel" class="dropdown-item" href="{{route('admin.restaurant.restaurants-export', ['type'=>'csv',request()->getQueryString()])}}">-->
-                   <!--                     <img class="avatar avatar-xss avatar-4by3 mr-2"-->
-                   <!--                                 src="{{dynamicAsset('public/assets/admin')}}/svg/components/placeholder-csv-format.svg"-->
-                   <!--                                 alt="Image Description">-->
-                   <!--                                 {{translate('messages.csv')}}-->
-                   <!--                 </a>-->
-                   <!--             </div>-->
-                   <!--         </div>-->
-                            <!-- Export Button Static -->
                         </div>
                     </div>
                     <!-- Card Header -->

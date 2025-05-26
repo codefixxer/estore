@@ -30,6 +30,8 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\CampaignReportExport;
 use App\Exports\VendorOrderReportExport;
 use App\Exports\VendorTransactionReportExport;
+use Carbon\CarbonPeriod;
+
 
 class ReportController extends Controller
 {
@@ -305,229 +307,287 @@ class ReportController extends Controller
 
 
 
-public function order_report(Request $request){
-    $from =  null;
-    $to = null;
-    $filter = $request->query('filter', 'all_time');
-    if($filter == 'custom'){
-        $from = $request->from ?? null;
-        $to = $request->to ?? null;
-    }
-    $key = explode(' ', $request['search']);
+// public function order_report(Request $request){
+//     $from =  null;
+//     $to = null;
+//     $filter = $request->query('filter', 'all_time');
+//     if($filter == 'custom'){
+//         $from = $request->from ?? null;
+//         $to = $request->to ?? null;
+//     }
+//     $key = explode(' ', $request['search']);
 
-    $restaurant_id = Helpers::get_restaurant_id();
-    $customer_id = $request->query('customer_id', 'all');
-    $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
-    $restaurant= Helpers::get_restaurant_data();
-    $data =0;
-    if (($restaurant->restaurant_model == 'subscription' && isset($restaurant->restaurant_sub) && $restaurant->restaurant_sub->self_delivery == 1)  || ($restaurant->restaurant_model == 'commission' && $restaurant->self_delivery_system == 1) ){
-        $data =1;
-    }
+//     $restaurant_id = Helpers::get_restaurant_id();
+//     $customer_id = $request->query('customer_id', 'all');
+//     $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
+//     $restaurant= Helpers::get_restaurant_data();
+//     $data =0;
+//     if (($restaurant->restaurant_model == 'subscription' && isset($restaurant->restaurant_sub) && $restaurant->restaurant_sub->self_delivery == 1)  || ($restaurant->restaurant_model == 'commission' && $restaurant->self_delivery_system == 1) ){
+//         $data =1;
+//     }
     
-    // Main orders query for pagination
-    $orders = Order::with(['customer', 'restaurant','details','transaction'])->where('restaurant_id',$restaurant_id)
-        ->Notpos()
-        ->NotDigitalOrder()
+//     // Main orders query for pagination
+//     $orders = Order::with(['customer', 'restaurant','details','transaction'])->where('restaurant_id',$restaurant_id)
+//         ->Notpos()
+//         ->NotDigitalOrder()
+//         ->when(isset($customer), function ($query) use ($customer) {
+//             return $query->where('user_id', $customer->id);
+//         })
+//         ->applyDateFilterSchedule($filter, $from, $to)
+//         ->when(isset($key), function($query) use($key){
+//             $query->where(function ($q) use ($key) {
+//                 foreach ($key as $value) {
+//                     $q->orWhere('id', 'like', "%{$value}%");
+//                 }
+//             });
+//         })
+//         ->whereNotIn('order_status',(config('order_confirmation_model') == 'restaurant'|| $data)?['failed','canceled', 'refund_requested']:['pending','failed','canceled', 'refund_requested'])
+//         ->HasSubscriptionToday()->OrderScheduledIn(30)
+//         ->withSum('transaction', 'admin_commission')
+//         ->withSum('transaction', 'admin_expense')
+//         ->withSum('transaction', 'delivery_fee_comission')
+//         ->orderBy('created_at', 'desc')->paginate(config('default_pagination'))->withQueryString();
+
+//     // order card values calculation
+//     $orders_list = Order::where('restaurant_id',$restaurant_id)
+//         ->Notpos()
+//         ->NotDigitalOrder()
+//         ->when(isset($customer), function ($query) use ($customer) {
+//             return $query->where('user_id', $customer->id);
+//         })
+//         ->whereNotIn('order_status',(config('order_confirmation_model') == 'restaurant'|| $data)?['failed','canceled', 'refund_requested']:['pending','failed','canceled', 'refund_requested'])
+//         ->HasSubscriptionToday()->OrderScheduledIn(30)
+//         ->applyDateFilterSchedule($filter, $from, $to)
+//         ->orderBy('schedule_at', 'desc')->get();
+
+//     // Calculate daily totals from the existing orders_list collection
+     
+     
+     
+
+
+
+// Log::info('Start processing orders list. Total orders: ' . $orders_list->count());
+
+// // 1. Filter by valid statuses
+// $dailyTotals = $orders_list->whereIn('order_status', [
+//     'accepted','confirmed','processing','handover','scheduled','failed','canceled','all'
+// ]);
+
+// Log::info('After filtering by order_status, count: ' . $dailyTotals->count());
+
+// // 2. Filter by non-empty created_at
+// $dailyTotals = $dailyTotals->filter(function($order) {
+//     $valid = !empty($order->created_at);
+//     if (!$valid) {
+//         Log::warning('Invalid created_at detected', ['order_id' => $order->id ?? null]);
+//     }
+//     return $valid;
+// });
+
+// Log::info('After filtering valid created_at, count: ' . $dailyTotals->count());
+
+// // 3. Group by date
+// $dailyTotals = $dailyTotals
+//     ->groupBy(function($order) {
+//         try {
+//             return Carbon::parse($order->created_at)->format('Y-m-d');
+//         } catch (\Exception $e) {
+//             Log::error('Date formatting failed', ['order_id' => $order->id ?? null, 'error' => $e->getMessage()]);
+//             return 'invalid-date';
+//         }
+//     })
+//     ->reject(function ($group, $date) {
+//         if ($date === 'invalid-date') {
+//             Log::warning('Rejected group with invalid-date');
+//         }
+//         return $date === 'invalid-date';
+//     })
+//     ->map(function($dayOrders, $date) {
+//         $total = $dayOrders->sum(function($order) {
+//             $amount = is_numeric($order->order_amount) ? $order->order_amount : 0;
+//             if (!is_numeric($order->order_amount)) {
+//                 Log::warning('Non-numeric order_amount detected', ['order_id' => $order->id ?? null]);
+//             }
+//             return $amount;
+//         });
+//         Log::info("Date: $date | Total Amount: $total | Orders Count: " . $dayOrders->count());
+//         return (object)[
+//             'day' => $date,
+//             'total_amount' => $total
+//         ];
+//     })
+//     ->sortByDesc(function($item) {
+//         return $item->day;
+//     })
+//     ->values();
+
+// Log::info('Final daily totals count: ' . $dailyTotals->count());
+
+
+
+
+
+    
+
+//     $total_canceled_count = $orders_list->where('order_status', 'canceled')->count();
+//     $total_delivered_count = $orders_list->where('order_status', 'delivered')->where('order_type', '<>' , 'pos')->count();
+//     $total_progress_count = $orders_list->whereIn('order_status', ['accepted','confirmed','processing','handover'])->count();
+//     $total_failed_count = $orders_list->where('order_status', 'failed')->count();
+//     $total_refunded_count = $orders_list->where('order_status', 'refunded')->count();
+//     $total_on_the_way_count = $orders_list->whereIn('order_status', ['picked_up'])->count();
+//     $total_accepted_count = $orders_list->where('order_status', 'accepted')->count();
+//     $total_pending_count = $orders_list->where('order_status', 'pending')->count();
+//     $total_scheduled_count = $orders_list->where('scheduled', 1)->count();
+
+//     return view('vendor-views.report.order-report', compact(
+//         'orders',
+//         'orders_list',
+//         'dailyTotals',
+//         'from',
+//         'to',
+//         'total_accepted_count',
+//         'total_pending_count',
+//         'total_scheduled_count',
+//         'filter',
+//         'customer',
+//         'total_on_the_way_count',
+//         'total_refunded_count',
+//         'total_failed_count',
+//         'total_progress_count',
+//         'total_canceled_count',
+//         'total_delivered_count'
+//     ));
+// }
+
+
+
+
+
+
+
+    public function order_report(Request $request){
+        $from =  null;
+        $to = null;
+        $filter = $request->query('filter', 'all_time');
+        if($filter == 'custom'){
+            $from = $request->from ?? null;
+            $to = $request->to ?? null;
+        }
+        $key = explode(' ', $request['search']);
+
+        $restaurant_id = Helpers::get_restaurant_id();
+        $customer_id = $request->query('customer_id', 'all');
+        $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
+        $restaurant= Helpers::get_restaurant_data();
+        $data =0;
+        if (($restaurant->restaurant_model == 'subscription' && isset($restaurant->restaurant_sub) && $restaurant->restaurant_sub->self_delivery == 1)  || ($restaurant->restaurant_model == 'commission' && $restaurant->self_delivery_system == 1) ){
+            $data =1;
+        }
+        $orders = Order::with(['customer', 'restaurant','details','transaction'])->where('restaurant_id',$restaurant_id)
+            ->Notpos()
+            ->NotDigitalOrder()
+            ->when(isset($customer), function ($query) use ($customer) {
+                return $query->where('user_id', $customer->id);
+            })
+            ->applyDateFilterSchedule($filter, $from, $to)
+            ->when(isset($key), function($query) use($key){
+                $query->where(function ($q) use ($key) {
+                    foreach ($key as $value) {
+                        $q->orWhere('id', 'like', "%{$value}%");
+                    }
+                });
+            })
+            // ->whereNotIn('order_status',(config('order_confirmation_model') == 'restaurant'|| $data)?[ 'refund_requested']:['pending','failed','canceled', 'refund_requested'])
+            // ->HasSubscriptionToday()->OrderScheduledIn(30)
+            ->withSum('transaction', 'admin_commission')
+            ->withSum('transaction', 'admin_expense')
+            ->withSum('transaction', 'delivery_fee_comission')
+            ->orderBy('created_at', 'desc')->paginate(config('default_pagination'))->withQueryString();
+
+        // order card values calculation
+        $orders_list = Order::where('restaurant_id',$restaurant_id)
+            ->Notpos()
+            ->NotDigitalOrder()
         ->when(isset($customer), function ($query) use ($customer) {
             return $query->where('user_id', $customer->id);
         })
+        // ->whereNotIn('order_status',(config('order_confirmation_model') == 'restaurant'|| $data)?['failed','canceled', 'refund_requested']:['pending','failed','canceled', 'refund_requested'])
+        // ->HasSubscriptionToday()->OrderScheduledIn(30)
         ->applyDateFilterSchedule($filter, $from, $to)
-        ->when(isset($key), function($query) use($key){
-            $query->where(function ($q) use ($key) {
-                foreach ($key as $value) {
-                    $q->orWhere('id', 'like', "%{$value}%");
-                }
-            });
-        })
-        ->whereNotIn('order_status',(config('order_confirmation_model') == 'restaurant'|| $data)?['failed','canceled', 'refund_requested']:['pending','failed','canceled', 'refund_requested'])
-        ->HasSubscriptionToday()->OrderScheduledIn(30)
-        ->withSum('transaction', 'admin_commission')
-        ->withSum('transaction', 'admin_expense')
-        ->withSum('transaction', 'delivery_fee_comission')
-        ->orderBy('created_at', 'desc')->paginate(config('default_pagination'))->withQueryString();
+        ->orderBy('created_at', 'desc')->get();
 
-    // order card values calculation
-    $orders_list = Order::where('restaurant_id',$restaurant_id)
-        ->Notpos()
-        ->NotDigitalOrder()
-        ->when(isset($customer), function ($query) use ($customer) {
-            return $query->where('user_id', $customer->id);
-        })
-        ->whereNotIn('order_status',(config('order_confirmation_model') == 'restaurant'|| $data)?['failed','canceled', 'refund_requested']:['pending','failed','canceled', 'refund_requested'])
-        ->HasSubscriptionToday()->OrderScheduledIn(30)
-        ->applyDateFilterSchedule($filter, $from, $to)
-        ->orderBy('schedule_at', 'desc')->get();
+        $total_canceled_count = $orders_list->where('order_status', 'canceled')->count();
+        $total_delivered_count = $orders_list->where('order_status', 'delivered')->where('order_type', '<>' , 'pos')->count();
+        $total_progress_count = $orders_list->whereIn('order_status', ['accepted','confirmed','processing','handover'])->count();
+        $total_failed_count = $orders_list->where('order_status', 'failed')->count();
+        $total_refunded_count = $orders_list->where('order_status', 'refunded')->count();
+        $total_on_the_way_count = $orders_list->whereIn('order_status', ['picked_up'])->count();
+        $total_accepted_count = $orders_list->where('order_status', 'accepted')->count();
+        $total_pending_count = $orders_list->where('order_status', 'pending')->count();
+        $total_confirmed_count = $orders_list->where('order_status', 'confirmed')->count();
+        $total_scheduled_count = $orders_list->where('scheduled', 1)->count();
+        
+        // code by saqib ali 
+        // $total_revenue = $orders_list->where('order_status', 'accepted')->sum('order_amount');
+        $total_revenue = $orders_list->where('order_status', 'confirmed')->sum('order_amount');
+        $total_trans = $orders_list->where('order_status', 'confirmed')->where('payment_method', 'Stripe')->sum('order_amount');
 
-    // Calculate daily totals from the existing orders_list collection
-     
-     
-     
-
-
-
-Log::info('Start processing orders list. Total orders: ' . $orders_list->count());
-
-// 1. Filter by valid statuses
-$dailyTotals = $orders_list->whereIn('order_status', [
-    'accepted','confirmed','processing','handover','scheduled','failed','canceled','all'
-]);
-
-Log::info('After filtering by order_status, count: ' . $dailyTotals->count());
-
-// 2. Filter by non-empty created_at
-$dailyTotals = $dailyTotals->filter(function($order) {
-    $valid = !empty($order->created_at);
-    if (!$valid) {
-        Log::warning('Invalid created_at detected', ['order_id' => $order->id ?? null]);
-    }
-    return $valid;
-});
-
-Log::info('After filtering valid created_at, count: ' . $dailyTotals->count());
-
-// 3. Group by date
-$dailyTotals = $dailyTotals
+        $all_orders = $total_pending_count + $total_canceled_count + $total_accepted_count + $total_failed_count +$total_confirmed_count;
+       
+       
+       
+       
+// Calculate daily revenue (group by date)
+$confirmedOrdersByDate = $orders_list
+    ->where('order_status', 'confirmed')
     ->groupBy(function($order) {
-        try {
-            return Carbon::parse($order->created_at)->format('Y-m-d');
-        } catch (\Exception $e) {
-            Log::error('Date formatting failed', ['order_id' => $order->id ?? null, 'error' => $e->getMessage()]);
-            return 'invalid-date';
-        }
+        return Carbon::parse($order->created_at)->format('Y-m-d');
     })
-    ->reject(function ($group, $date) {
-        if ($date === 'invalid-date') {
-            Log::warning('Rejected group with invalid-date');
-        }
-        return $date === 'invalid-date';
-    })
-    ->map(function($dayOrders, $date) {
-        $total = $dayOrders->sum(function($order) {
-            $amount = is_numeric($order->order_amount) ? $order->order_amount : 0;
-            if (!is_numeric($order->order_amount)) {
-                Log::warning('Non-numeric order_amount detected', ['order_id' => $order->id ?? null]);
-            }
-            return $amount;
-        });
-        Log::info("Date: $date | Total Amount: $total | Orders Count: " . $dayOrders->count());
-        return (object)[
-            'day' => $date,
-            'total_amount' => $total
-        ];
-    })
-    ->sortByDesc(function($item) {
-        return $item->day;
-    })
-    ->values();
+    ->map(function($dayOrders) {
+        return $dayOrders->sum('order_amount');
+    });
 
-Log::info('Final daily totals count: ' . $dailyTotals->count());
+// Generate all dates in the selected range (Monday to Sunday of current week by default)
+$startDate = $from ? Carbon::parse($from) : Carbon::now()->startOfWeek();
+$endDate = $to ? Carbon::parse($to) : Carbon::now()->endOfWeek();
 
+$dateRange = CarbonPeriod::create($startDate, $endDate);
 
-
-
-
-    
-
-    $total_canceled_count = $orders_list->where('order_status', 'canceled')->count();
-    $total_delivered_count = $orders_list->where('order_status', 'delivered')->where('order_type', '<>' , 'pos')->count();
-    $total_progress_count = $orders_list->whereIn('order_status', ['accepted','confirmed','processing','handover'])->count();
-    $total_failed_count = $orders_list->where('order_status', 'failed')->count();
-    $total_refunded_count = $orders_list->where('order_status', 'refunded')->count();
-    $total_on_the_way_count = $orders_list->whereIn('order_status', ['picked_up'])->count();
-    $total_accepted_count = $orders_list->where('order_status', 'accepted')->count();
-    $total_pending_count = $orders_list->where('order_status', 'pending')->count();
-    $total_scheduled_count = $orders_list->where('scheduled', 1)->count();
-
-    return view('vendor-views.report.order-report', compact(
-        'orders',
-        'orders_list',
-        'dailyTotals',
-        'from',
-        'to',
-        'total_accepted_count',
-        'total_pending_count',
-        'total_scheduled_count',
-        'filter',
-        'customer',
-        'total_on_the_way_count',
-        'total_refunded_count',
-        'total_failed_count',
-        'total_progress_count',
-        'total_canceled_count',
-        'total_delivered_count'
-    ));
+// Initialize daily revenue with 0 for all dates
+$dailyRevenue = [];
+foreach ($dateRange as $date) {
+    $dateKey = $date->format('Y-m-d');
+    $dailyRevenue[$dateKey] = $confirmedOrdersByDate[$dateKey] ?? 0;
 }
 
+// Group by day of week (0=Sunday, 6=Saturday)
+$weeklyRevenue = [0, 0, 0, 0, 0, 0, 0]; // Initialize for all days
 
+foreach ($dailyRevenue as $date => $amount) {
+    $dayOfWeek = Carbon::parse($date)->dayOfWeek;
+    $weeklyRevenue[$dayOfWeek] += $amount;
+}
 
+// Reorder to start with Monday (1)
+$weeklyRevenueOrdered = [
+    $weeklyRevenue[1], // Monday
+    $weeklyRevenue[2], // Tuesday
+    $weeklyRevenue[3], // Wednesday
+    $weeklyRevenue[4], // Thursday
+    $weeklyRevenue[5], // Friday
+    $weeklyRevenue[6], // Saturday
+    $weeklyRevenue[0], // Sunday
+];
 
-
-
-
-    // public function order_report(Request $request){
-    //     $from =  null;
-    //     $to = null;
-    //     $filter = $request->query('filter', 'all_time');
-    //     if($filter == 'custom'){
-    //         $from = $request->from ?? null;
-    //         $to = $request->to ?? null;
-    //     }
-    //     $key = explode(' ', $request['search']);
-
-    //     $restaurant_id = Helpers::get_restaurant_id();
-    //     $customer_id = $request->query('customer_id', 'all');
-    //     $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
-    //     $restaurant= Helpers::get_restaurant_data();
-    //     $data =0;
-    //     if (($restaurant->restaurant_model == 'subscription' && isset($restaurant->restaurant_sub) && $restaurant->restaurant_sub->self_delivery == 1)  || ($restaurant->restaurant_model == 'commission' && $restaurant->self_delivery_system == 1) ){
-    //         $data =1;
-    //     }
-    //     $orders = Order::with(['customer', 'restaurant','details','transaction'])->where('restaurant_id',$restaurant_id)
-    //         ->Notpos()
-    //         ->NotDigitalOrder()
-    //         ->when(isset($customer), function ($query) use ($customer) {
-    //             return $query->where('user_id', $customer->id);
-    //         })
-    //         ->applyDateFilterSchedule($filter, $from, $to)
-    //         ->when(isset($key), function($query) use($key){
-    //             $query->where(function ($q) use ($key) {
-    //                 foreach ($key as $value) {
-    //                     $q->orWhere('id', 'like', "%{$value}%");
-    //                 }
-    //             });
-    //         })
-    //         ->whereNotIn('order_status',(config('order_confirmation_model') == 'restaurant'|| $data)?['failed','canceled', 'refund_requested']:['pending','failed','canceled', 'refund_requested'])
-    //         ->HasSubscriptionToday()->OrderScheduledIn(30)
-    //         ->withSum('transaction', 'admin_commission')
-    //         ->withSum('transaction', 'admin_expense')
-    //         ->withSum('transaction', 'delivery_fee_comission')
-    //         ->orderBy('schedule_at', 'desc')->paginate(config('default_pagination'))->withQueryString();
-
-    //     // order card values calculation
-    //     $orders_list = Order::where('restaurant_id',$restaurant_id)
-    //         ->Notpos()
-    //         ->NotDigitalOrder()
-    //     ->when(isset($customer), function ($query) use ($customer) {
-    //         return $query->where('user_id', $customer->id);
-    //     })
-    //     ->whereNotIn('order_status',(config('order_confirmation_model') == 'restaurant'|| $data)?['failed','canceled', 'refund_requested']:['pending','failed','canceled', 'refund_requested'])
-    //     ->HasSubscriptionToday()->OrderScheduledIn(30)
-    //     ->applyDateFilterSchedule($filter, $from, $to)
-    //     ->orderBy('schedule_at', 'desc')->get();
-
-    //     $total_canceled_count = $orders_list->where('order_status', 'canceled')->count();
-    //     $total_delivered_count = $orders_list->where('order_status', 'delivered')->where('order_type', '<>' , 'pos')->count();
-    //     $total_progress_count = $orders_list->whereIn('order_status', ['accepted','confirmed','processing','handover'])->count();
-    //     $total_failed_count = $orders_list->where('order_status', 'failed')->count();
-    //     $total_refunded_count = $orders_list->where('order_status', 'refunded')->count();
-    //     $total_on_the_way_count = $orders_list->whereIn('order_status', ['picked_up'])->count();
-    //     $total_accepted_count = $orders_list->where('order_status', 'accepted')->count();
-    //     $total_pending_count = $orders_list->where('order_status', 'pending')->count();
-    //     $total_scheduled_count = $orders_list->where('scheduled', 1)->count();
-
-    //     return view('vendor-views.report.order-report', compact('orders','orders_list','from','to','total_accepted_count','total_pending_count','total_scheduled_count',
-    //     'filter','customer','total_on_the_way_count','total_refunded_count','total_failed_count','total_progress_count','total_canceled_count','total_delivered_count'));
-    // }
+        return view('vendor-views.report.order-report', compact('orders','orders_list','from','to','total_accepted_count','total_pending_count','total_scheduled_count',
+        'filter','customer','total_on_the_way_count','total_refunded_count','total_failed_count','total_progress_count','total_canceled_count','total_delivered_count' , 'all_orders'
+        ,'total_revenue','total_confirmed_count','weeklyRevenueOrdered','total_trans'));
+    }
+    
+    
+    
+    
     
     
     

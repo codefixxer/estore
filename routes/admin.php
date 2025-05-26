@@ -189,6 +189,10 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
 
         Route::get('restaurant/get-restaurants', 'VendorController@get_restaurants')->name('restaurant.get-restaurants');
         Route::get('restaurant/get-restaurant-ratings', 'VendorController@get_restaurant_ratings')->name('restaurant.get-restaurant-ratings');
+
+
+
+        
         Route::group(['prefix' => 'restaurant', 'as' => 'restaurant.','middleware'=>['module:restaurant']], function () {
             Route::get('get-restaurants-data/{restaurant}', 'VendorController@get_restaurant_data')->name('get-restaurants-data');
             Route::get('restaurant-filter/{id}', 'VendorController@restaurant_filter')->name('restaurantfilter');

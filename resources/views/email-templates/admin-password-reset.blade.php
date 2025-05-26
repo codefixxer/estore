@@ -73,7 +73,7 @@
     <table style="width:100%;max-width:500px;margin:0 auto;text-align:center;background:#fff">
         <tr>
             <td style="padding:30px 30px 0">
-                <img src="{{dynamicAsset('/public/assets/admin/img/email-template-img.png')}}" alt="">
+                <!--<img src="{{dynamicAsset('/public/assets/admin/img/email-template-img.png')}}" alt="">-->
                 <h3 style="font-size:17px;font-weight:500">{{ translate('Change_password_request') }}</h3>
 
             </td>
@@ -82,44 +82,49 @@
             <td style="padding:0 30px 30px; text-align:left">
                 <span style="font-weight:500;display:block;margin: 20px 0 11px;">{{ translate('Hi') }} {{ $name }},</span>
                 <span style="display:block;margin-bottom:14px">
-                    {{ translate('Use_this_code_to_reset_your_password') }}
+                    <!--{{ translate('Use_this_code_to_reset_your_password') }}-->
+                    We received a request to reset your password. Please use the code below to continue:
                 </span>
                 <span style="display:block;margin-bottom:14px">
                     <span style="display:block">{{ $url }} </span>
                 </span>
 
+       <span style="display:block;margin-bottom:14px">
+                    <!--{{ translate('Use_this_code_to_reset_your_password') }}-->
+                    If you did not request this, please ignore this email or contact our support team.
+                </span>
 
                 <span class="border-top"></span>
                 <span class="d-block" style="margin-bottom:14px"> {{ translate('Please_contact_us_for_any_queries,_we’re_always_happy_to_help.') }} </span>
-                <span class="d-block">
+                <span class="d-block"> <br><br>
                     {{ translate('Thanks_&_Regards') }},</span>
 
-
+<br><br>
                     @php($business_name = \App\Models\BusinessSetting::where(['key' => 'business_name'])->first()?->value)
-                <span class="d-block" style="margin-bottom:20px">{{ $business_name }}</span>
-                @php($restaurant_logo = \App\Models\BusinessSetting::where(['key' => 'logo'])->first())
+                <span class="d-block" style="margin-bottom:20px; font-weight:bold">{{ $business_name }}</span>
+                <!--@php($restaurant_logo = \App\Models\BusinessSetting::where(['key' => 'logo'])->first())-->
 
-                <img class="onerror-image" style="width:120px;display:block;margin:10px auto"
-                src="{{ \App\CentralLogics\Helpers::get_full_url('business',$restaurant_logo?->value,$restaurant_logo?->storage[0]?->value ?? 'public', 'favicon') }}"
-                data-onerror-image="{{ dynamicAsset('/public/assets/admin/img/favicon.png') }}" alt="image">
+                <!--<img class="onerror-image" style="width:120px;display:block;margin:10px auto"-->
+                <!--src="{{ \App\CentralLogics\Helpers::get_full_url('business',$restaurant_logo?->value,$restaurant_logo?->storage[0]?->value ?? 'public', 'favicon') }}"-->
+                <!--data-onerror-image="{{ dynamicAsset('/public/assets/admin/img/favicon.png') }}" alt="image">-->
 
-                <span class="privacy">
-                    <a href="{{ route('privacy-policy') }}">{{ translate('Privacy_Policy') }}</a> &nbsp; &nbsp;  <a href="{{ route('contact-us') }}">{{ translate('Contact_Us') }}</a>
-                </span>
+                <!--<span class="privacy">-->
+                <!--    <a href="{{ route('privacy-policy') }}">{{ translate('Privacy_Policy') }}</a> &nbsp; &nbsp;  <a href="{{ route('contact-us') }}">{{ translate('Contact_Us') }}</a>-->
+                <!--</span>-->
 
-                @php($social_media = \App\Models\SocialMedia::active()->get())
+                <!--@php($social_media = \App\Models\SocialMedia::active()->get())-->
 
-                <span class="social" style="text-align:center">
-                    @foreach ($social_media as $item)
-                    <a href="{{$item->link}}" style="margin: 0 5px;text-decoration:none">
-                        <img  src="{{dynamicAsset('/public/assets/admin/img/img/')}}/{{ $item->name }}.png" alt="{{ $item->name }}">
-                    </a>
-                    @endforeach
-                </span>
-                @php($footer_text = \App\Models\BusinessSetting::where(['key' => 'footer_text'])->first())
-                <span class="copyright">
-                    {{ $footer_text?->value ?? translate('All_right_reserved') }}
-                </span>
+                <!--<span class="social" style="text-align:center">-->
+                <!--    @foreach ($social_media as $item)-->
+                <!--    <a href="{{$item->link}}" style="margin: 0 5px;text-decoration:none">-->
+                <!--        <img  src="{{dynamicAsset('/public/assets/admin/img/img/')}}/{{ $item->name }}.png" alt="{{ $item->name }}">-->
+                <!--    </a>-->
+                <!--    @endforeach-->
+                <!--</span>-->
+                <!--@php($footer_text = \App\Models\BusinessSetting::where(['key' => 'footer_text'])->first())-->
+                <!--<span class="copyright">-->
+                <!--    {{ $footer_text?->value ?? translate('All_right_reserved') }}-->
+                <!--</span>-->
             </td>
         </tr>
     </table>

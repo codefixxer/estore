@@ -21,270 +21,81 @@
         </div>
         <!-- End Page Header -->
 
-  <div class="card mb-20">
-        <div class="card-body">
-            <h4 class="">Search Data</h4>
-            <form method="get" id="filterForm">
-                <div class="row g-3">
-                    <div class="col-sm-6 col-md-3">
-                        <select class="form-control" name="week" id="weekSelect">
-                            <!-- Weeks will be populated by JavaScript -->
-                        </select>
-                    </div>
-                    <div class="col-sm-6 col-md-3 ml-auto">
-                        <button type="submit" class="btn btn-primary btn-block">Filter</button>
-                    </div>
-                </div>
-                <!-- Hidden inputs for actual form submission -->
-                <input type="hidden" name="filter" value="custom">
-                <input type="hidden" name="from" id="hiddenFrom">
-                <input type="hidden" name="to" id="hiddenTo">
-            </form>
-        </div>
-    </div>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const weekSelect = document.getElementById('weekSelect');
-        const filterForm = document.getElementById('filterForm');
-        const hiddenFrom = document.getElementById('hiddenFrom');
-        const hiddenTo = document.getElementById('hiddenTo');
-        
-        // Initialize the week dropdown
-        populateWeekDropdown();
-        
-        // Handle week selection change
-        weekSelect.addEventListener('change', function() {
-            // Get the selected week's dates
-            const selectedWeek = weekSelect.value;
-            if (selectedWeek) {
-                const [startDate, endDate] = selectedWeek.split('|');
-                
-                // Set the hidden inputs
-                hiddenFrom.value = startDate;
-                hiddenTo.value = endDate;
-                
-                // Submit the form automatically
-                filterForm.submit();
-            }
-        });
-        
-        function populateWeekDropdown() {
-            const currentYear = new Date().getFullYear();
-            const today = new Date();
-            
-            // Find the first Monday of the year
-            let firstMonday = new Date(currentYear, 0, 1);
-            while (firstMonday.getDay() !== 1) {
-                firstMonday.setDate(firstMonday.getDate() + 1);
-            }
-            
-            // Get current week's Monday
-            const currentWeekMonday = getMondayOfCurrentWeek();
-            
-            // Create an array to store all weeks
-            const weeks = [];
-            
-            // Check if there's a previously selected week in URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            const selectedFrom = urlParams.get('from');
-            const selectedTo = urlParams.get('to');
-            let hasSelectedWeek = false;
-            
-            // Loop through all weeks from current week back to first week of the year
-            let currentDate = new Date(currentWeekMonday);
-            while (currentDate >= firstMonday) {
-                const startDate = new Date(currentDate);
-                const endDate = new Date(currentDate);
-                endDate.setDate(endDate.getDate() + 6);
-                
-                // Format dates as YYYY-MM-DD
-                const startDateStr = formatDate(startDate);
-                const endDateStr = formatDate(endDate);
-                
-                // Calculate week number
-                const weekNumber = getWeekNumber(startDate);
-                
-                // Check if this week matches the selected week from URL
-                const isSelectedWeek = (selectedFrom && selectedTo && 
-                                      startDateStr === selectedFrom && 
-                                      endDateStr === selectedTo);
-                
-                // Check if this is the current week
-                const isCurrentWeek = (startDate.getTime() === currentWeekMonday.getTime());
-                
-                // Add to weeks array
-                weeks.push({
-                    weekNumber: weekNumber,
-                    startDate: startDate,
-                    endDate: endDate,
-                    startDateStr: startDateStr,
-                    endDateStr: endDateStr,
-                    isCurrent: isCurrentWeek,
-                    isSelected: isSelectedWeek
-                });
-                
-                if (isSelectedWeek) hasSelectedWeek = true;
-                
-                // Move to previous week
-                currentDate.setDate(currentDate.getDate() - 7);
-            }
-            
-            // Add weeks to dropdown
-            weeks.forEach(week => {
-                const option = document.createElement('option');
-                option.value = `${week.startDateStr}|${week.endDateStr}`;
-                
-                let label;
-                if (week.isSelected) {
-                    label = `Selected Week (${formatDisplayDate(week.startDate)} - ${formatDisplayDate(week.endDate)})`;
-                } else if (week.isCurrent) {
-                    label = `Current Week (${formatDisplayDate(week.startDate)} - ${formatDisplayDate(week.endDate)})`;
-                } else {
-                    label = `Week ${week.weekNumber} (${formatDisplayDate(week.startDate)} - ${formatDisplayDate(week.endDate)})`;
-                }
-                
-                option.textContent = label;
-                option.selected = week.isSelected || (!hasSelectedWeek && week.isCurrent);
-                
-                // Set the hidden values if this is the selected option
-                if (option.selected) {
-                    hiddenFrom.value = week.startDateStr;
-                    hiddenTo.value = week.endDateStr;
-                }
-                
-                weekSelect.appendChild(option);
-            });
-        }
-        
-        function getMondayOfCurrentWeek() {
-            const today = new Date();
-            const currentDay = today.getDay();
-            const diff = today.getDate() - currentDay + (currentDay === 0 ? -6 : 1); // adjust when day is Sunday
-            return new Date(today.setDate(diff));
-        }
-        
-        // Helper function to get ISO week number
-        function getWeekNumber(date) {
-            const d = new Date(date);
-            d.setHours(0, 0, 0, 0);
-            d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
-            const week1 = new Date(d.getFullYear(), 0, 4);
-            return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
-        }
-        
-        function formatDate(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-        
-        function formatDisplayDate(date) {
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const day = date.getDate();
-            const month = months[date.getMonth()];
-            return `${day} ${month}`;
-        }
-    });
-</script>
-        <!--<div class="card mb-20">-->
-        <!--    <div class="card-body">-->
-        <!--        <h4 class="">{{ translate('Search_Data') }}</h4>-->
-        <!--        <form  method="get">-->
+        <div class="card mb-20">
+            <div class="card-body">
+                <h4 class="">{{ translate('Search_Data') }}</h4>
+                <form  method="get">
 
-        <!--            <div class="row g-3">-->
-        <!--                <div class="col-sm-6 col-md-3">-->
-        <!--                    <select class="form-control set-filter" name="filter"-->
-        <!--                            data-url="{{ url()->full() }}" data-filter="filter">-->
-        <!--                        <option value="all_time" {{ isset($filter) && $filter == 'all_time' ? 'selected' : '' }}>-->
-        <!--                            {{ translate('messages.All_Time') }}</option>-->
-        <!--                        <option value="this_year" {{ isset($filter) && $filter == 'this_year' ? 'selected' : '' }}>-->
-        <!--                            {{ translate('messages.This_Year') }}</option>-->
-        <!--                        <option value="previous_year"-->
-        <!--                            {{ isset($filter) && $filter == 'previous_year' ? 'selected' : '' }}>-->
-        <!--                            {{ translate('messages.Previous_Year') }}</option>-->
-        <!--                        <option value="this_month"-->
-        <!--                            {{ isset($filter) && $filter == 'this_month' ? 'selected' : '' }}>-->
-        <!--                            {{ translate('messages.This_Month') }}</option>-->
-        <!--                        <option value="this_week" {{ isset($filter) && $filter == 'this_week' ? 'selected' : '' }}>-->
-        <!--                            {{ translate('messages.This_Week') }}</option>-->
-        <!--                        <option value="custom" {{ isset($filter) && $filter == 'custom' ? 'selected' : '' }}>-->
-        <!--                            {{ translate('messages.Custom') }}</option>-->
-        <!--                    </select>-->
-        <!--                </div>-->
-        <!--                @if (isset($filter) && $filter == 'custom')-->
-        <!--                 <div class="col-sm-6 col-md-3">-->
-        <!--                    <input type="date" name="from" id="from_date" class="form-control"-->
-        <!--                        placeholder="{{ translate('Start_Date') }}"-->
-        <!--                        value={{ isset($from) ? $from  : '' }} required>-->
-        <!--                </div>-->
-        <!--                <div class="col-sm-6 col-md-3">-->
-        <!--                    <input type="date" name="to" id="to_date" class="form-control"-->
-        <!--                        placeholder="{{ translate('End_Date') }}"-->
-        <!--                        value={{ isset($to) ? $to  : '' }} required>-->
-        <!--                </div>-->
-        <!--                @endif-->
-        <!--                <div class="col-sm-6 col-md-3 ml-auto">-->
-        <!--                    <button type="submit"-->
-        <!--                        class="btn btn-primary btn-block">{{ translate('Filter') }}</button>-->
-        <!--                </div>-->
-        <!--            </div>-->
-        <!--        </form>-->
-        <!--    </div>-->
-        <!--</div>-->
-        
-        
-        
-<div class="mb-20">
-    <div class="row g-3">  <!-- Increased gutter spacing to 3 -->
-        <!-- Left Column (Graph) - 50% width -->
-        <div class="col-lg-6 col-md-12">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="card-title">{{ translate('messages.weekly_order_amounts') }}</h5>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container">
-                        <canvas id="weeklyOrderChart"></canvas>
+                    <div class="row g-3">
+                        <div class="col-sm-6 col-md-3">
+                            <select class="form-control set-filter" name="filter"
+                                    data-url="{{ url()->full() }}" data-filter="filter">
+                                <option value="all_time" {{ isset($filter) && $filter == 'all_time' ? 'selected' : '' }}>
+                                    {{ translate('messages.All_Time') }}</option>
+                                <option value="this_year" {{ isset($filter) && $filter == 'this_year' ? 'selected' : '' }}>
+                                    {{ translate('messages.This_Year') }}</option>
+                                <option value="previous_year"
+                                    {{ isset($filter) && $filter == 'previous_year' ? 'selected' : '' }}>
+                                    {{ translate('messages.Previous_Year') }}</option>
+                                <option value="this_month"
+                                    {{ isset($filter) && $filter == 'this_month' ? 'selected' : '' }}>
+                                    {{ translate('messages.This_Month') }}</option>
+                                <option value="this_week" {{ isset($filter) && $filter == 'this_week' ? 'selected' : '' }}>
+                                    {{ translate('messages.This_Week') }}</option>
+                                <option value="custom" {{ isset($filter) && $filter == 'custom' ? 'selected' : '' }}>
+                                    {{ translate('messages.Custom') }}</option>
+                            </select>
+                        </div>
+                        @if (isset($filter) && $filter == 'custom')
+                         <div class="col-sm-6 col-md-3">
+                            <input type="date" name="from" id="from_date" class="form-control"
+                                placeholder="{{ translate('Start_Date') }}"
+                                value={{ isset($from) ? $from  : '' }} required>
+                        </div>
+                        <div class="col-sm-6 col-md-3">
+                            <input type="date" name="to" id="to_date" class="form-control"
+                                placeholder="{{ translate('End_Date') }}"
+                                value={{ isset($to) ? $to  : '' }} required>
+                        </div>
+                        @endif
+                        <div class="col-sm-6 col-md-3 ml-auto">
+                            <button type="submit"
+                                class="btn btn-primary btn-block">{{ translate('Filter') }}</button>
+                        </div>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
 
-        <!-- Right Column (Order Status Cards) - 50% width -->
-        <div class="col-lg-6 col-md-12">
-            <div class="row g-3">  <!-- 2x2 grid layout -->
-                <!-- First Row -->
-                <div class="col-md-6">
+        <div class="mb-20">
+            <div class="row g-2">
+                <div class="col-sm-6 col-lg-4">
                     <a class="order--card h-100" href="#">
                         <div class="d-flex justify-content-between align-items-center">
                             <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
-                                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/accepted.png')}}" alt="dashboard" class="oder--card-icon">
-                                <span>All Orders</span>
+                                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/schedule.png')}}" alt="dashboard" class="oder--card-icon">
+                                <span>{{ translate('Scheduled_Orders') }}</span>
                             </h6>
                             <span class="card-title" style="--base-clr:#0661CB">
-                                {{ $all_orders }}
+                                {{ $total_scheduled_count }}
                             </span>
                         </div>
                     </a>
                 </div>
-                <div class="col-md-6">
+                <div class="col-sm-6 col-lg-4">
                     <a class="order--card h-100" href="#">
                         <div class="d-flex justify-content-between align-items-center">
                             <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
-                                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/canceled.png')}}" alt="dashboard" class="oder--card-icon">
-                                <span>Revenue</span>
+                                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/pending.png')}}" alt="dashboard" class="oder--card-icon">
+                                <span>{{ translate('Pending_Orders') }}</span>
                             </h6>
-                            <span class="card-title" style="--base-clr:#FF7500">
-                                {{ $total_revenue }}
+                            <span class="card-title" style="--base-clr:#0661CB">
+                                {{ $total_pending_count }}
                             </span>
                         </div>
                     </a>
                 </div>
-                
-                <!-- Second Row -->
-                
-                 <div class="col-md-6">
+                <div class="col-sm-6 col-lg-4">
                     <a class="order--card h-100" href="#">
                         <div class="d-flex justify-content-between align-items-center">
                             <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
@@ -292,18 +103,56 @@
                                 <span>{{ translate('Accepted_Orders') }}</span>
                             </h6>
                             <span class="card-title" style="--base-clr:#0661CB">
-                                {{ $total_confirmed_count }}
+                                {{ $total_accepted_count }}
                             </span>
                         </div>
                     </a>
                 </div>
-                
-                <div class="col-md-6">
+                <div class="col-sm-6 col-lg-4">
                     <a class="order--card h-100" href="#">
                         <div class="d-flex justify-content-between align-items-center">
                             <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
-                                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/failed.png')}}" alt="dashboard" class="oder--card-icon">
-                                <span>Canceled Orders</span>
+                                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/processing.png')}}" alt="dashboard" class="oder--card-icon">
+                                <span>{{ translate('Processing_Orders') }}</span>
+                            </h6>
+                            <span class="card-title" style="--base-clr:#00AA6D">
+                                {{ $total_progress_count }}
+                            </span>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-sm-6 col-lg-4">
+                    <a class="order--card h-100" href="#">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
+                                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/on-the-way.png')}}" alt="dashboard" class="oder--card-icon">
+                                <span>{{ translate('Food_On_the_Way') }}</span>
+                            </h6>
+                            <span class="card-title" style="--base-clr:#00AA6D">
+                                {{ $total_on_the_way_count }}
+                            </span>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-sm-6 col-lg-4">
+                    <a class="order--card h-100" href="#">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
+                                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/delivered.png')}}" alt="dashboard" class="oder--card-icon">
+                                <span>{{  translate('Delivered') }}</span>
+                            </h6>
+                            <span class="card-title" style="--base-clr:#00AA6D">
+                                {{$total_delivered_count}}
+                            </span>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-sm-6 col-lg-4">
+                    <a class="order--card h-100" href="#">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
+                                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/canceled.png')}}" alt="dashboard" class="oder--card-icon">
+                                <span>{{ translate('Canceled') }}</span>
                             </h6>
                             <span class="card-title" style="--base-clr:#FF7500">
                                 {{ $total_canceled_count }}
@@ -311,327 +160,34 @@
                         </div>
                     </a>
                 </div>
-               
-                <!-- Second Row -->
-                <div class="col-md-6">
+                <div class="col-sm-6 col-lg-4">
                     <a class="order--card h-100" href="#">
                         <div class="d-flex justify-content-between align-items-center">
                             <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
                                 <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/failed.png')}}" alt="dashboard" class="oder--card-icon">
-                                <span>Transaction</span>
+                                <span>{{ translate('Payment_Failed') }}</span>
                             </h6>
                             <span class="card-title" style="--base-clr:#FF7500">
-                                {{ $total_trans }}
+                                {{ $total_failed_count }}
                             </span>
                         </div>
                     </a>
                 </div>
-                <div class="col-md-6">
+                <div class="col-sm-6 col-lg-4">
                     <a class="order--card h-100" href="#">
                         <div class="d-flex justify-content-between align-items-center">
                             <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
-                                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/delivered.png')}}" alt="dashboard" class="oder--card-icon">
-                                <span>Payment Failed</span>
+                                <img src="{{dynamicAsset('/public/assets/admin/img/order-icons/refunded.png')}}" alt="dashboard" class="oder--card-icon">
+                                <span>{{ translate('Refunded') }}</span>
                             </h6>
-                            <span class="card-title" style="--base-clr:#00AA6D">
-                                <!--{{ $total_failed_count }}-->
-                                {{$total_pending_count}}
+                            <span class="card-title" style="--base-clr:#FF7500">
+                                {{ $total_refunded_count }}
                             </span>
                         </div>
                     </a>
                 </div>
-                
-                <!-- Empty Space Row (for spacing) -->
             </div>
         </div>
-    </div>
-</div>
-
-
-
-<h1>hello</h1>
-
-<style>
-    .chart-container {
-        position: relative;
-        height: 350px;
-        width: 100%;
-    }
-    
-    .order--card {
-        display: block;
-        padding: 15px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: transform 0.3s ease;
-        height: 100%;
-        min-height: 120px; /* Fixed height for consistency */
-    }
-    
-    .order--card:hover {
-        transform: translateY(-5px);
-    }
-    
-    /* Responsive adjustments */
-    @media (max-width: 992px) {
-        .order--card {
-            min-height: 100px;
-        }
-    }
-    
-    @media (max-width: 768px) {
-        .chart-container {
-            height: 300px;
-        }
-        .order--card {
-            min-height: 90px;
-        }
-    }
-</style>
-
-
-                <!-- Graph Section -->
-
-
-<!-- End Graph Section -->
-
-@push('script_2')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        try {
-            // Canvas check
-            const canvas = document.getElementById('weeklyOrderChart');
-            if (!canvas) {
-                console.error('Canvas element not found!');
-                return;
-            }
-
-            // Data from backend
-            const weeklyData = {
-                labels: [
-                    "{{ translate('messages.mon') }}", 
-                    "{{ translate('messages.tue') }}",
-                    "{{ translate('messages.wed') }}",
-                    "{{ translate('messages.thu') }}",
-                    "{{ translate('messages.fri') }}",
-                    "{{ translate('messages.sat') }}",
-                    "{{ translate('messages.sun') }}"
-                ],
-                amounts: @json($weeklyRevenueOrdered ?? array_fill(0, 7, 0))
-            };
-
-            // Create chart
-            new Chart(canvas.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: weeklyData.labels,
-                    datasets: [{
-                        label: "{{ translate('messages.order_amount') }}",
-                        data: weeklyData.amounts,
-                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return value + ' {{ \App\CentralLogics\Helpers::currency_symbol() }}';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-        } catch (error) {
-            console.error('Chart error:', error);
-        }
-    });
-</script>
-@endpush
-
-
-
-
-
-<!--@push('script_2')-->
-<!--<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>-->
-<!--<script>-->
-<!--    document.addEventListener('DOMContentLoaded', function () {-->
-        // Sample data - replace with your actual data from backend
-<!--        const weeklyData = {-->
-<!--            labels: [-->
-<!--                "{{ translate('messages.mon') }}", -->
-<!--                "{{ translate('messages.tue') }}",-->
-<!--                "{{ translate('messages.wed') }}",-->
-<!--                "{{ translate('messages.thu') }}",-->
-<!--                "{{ translate('messages.fri') }}",-->
-<!--                "{{ translate('messages.sat') }}",-->
-<!--                "{{ translate('messages.sun') }}"-->
-<!--            ],-->
-            amounts: [150, 220, 180, 250, 400, 130, 280] // Dummy data
-<!--        };-->
-
-        // Get the canvas element
-<!--        const ctx = document.getElementById('weeklyOrderChart').getContext('2d');-->
-        
-        // Create the chart
-<!--        const weeklyOrderChart = new Chart(ctx, {-->
-<!--            type: 'bar',-->
-<!--            data: {-->
-<!--                labels: weeklyData.labels,-->
-<!--                datasets: [{-->
-<!--                    label: "{{ translate('messages.order_amount') }}",-->
-<!--                    data: weeklyData.amounts,-->
-<!--                    backgroundColor: 'rgba(54, 162, 235, 0.7)',-->
-<!--                    borderColor: 'rgba(54, 162, 235, 1)',-->
-<!--                    borderWidth: 1,-->
-                    barPercentage: 0.7, // Adjusted for narrower container
-<!--                    categoryPercentage: 0.8-->
-<!--                }]-->
-<!--            },-->
-<!--            options: {-->
-<!--                responsive: true,-->
-<!--                maintainAspectRatio: false,-->
-<!--                scales: {-->
-<!--                    y: {-->
-<!--                        beginAtZero: true,-->
-<!--                        suggestedMax: Math.max(...weeklyData.amounts) * 1.2,-->
-<!--                        title: {-->
-<!--                            display: true,-->
-<!--                            text: "{{ translate('messages.amount') }}",-->
-<!--                            font: {-->
-                                size: 12 // Smaller font for narrower space
-<!--                            }-->
-<!--                        },-->
-<!--                        ticks: {-->
-<!--                            callback: function(value) {-->
-<!--                                return value + ' €';-->
-<!--                            },-->
-<!--                            font: {-->
-                                size: 11 // Smaller ticks
-<!--                            },-->
-                            padding: 5 // Less padding
-<!--                        }-->
-<!--                    },-->
-<!--                    x: {-->
-<!--                        title: {-->
-<!--                            display: true,-->
-<!--                            text: "{{ translate('messages.day_of_week') }}",-->
-<!--                            font: {-->
-<!--                                size: 12-->
-<!--                            }-->
-<!--                        },-->
-<!--                        grid: {-->
-<!--                            display: false-->
-<!--                        },-->
-<!--                        ticks: {-->
-<!--                            font: {-->
-<!--                                size: 11-->
-<!--                            }-->
-<!--                        }-->
-<!--                    }-->
-<!--                },-->
-<!--                plugins: {-->
-<!--                    legend: {-->
-<!--                        display: true,-->
-<!--                        position: 'top',-->
-<!--                        labels: {-->
-                            boxWidth: 10, // Smaller legend items
-<!--                            padding: 15,-->
-<!--                            font: {-->
-<!--                                size: 11-->
-<!--                            }-->
-<!--                        }-->
-<!--                    },-->
-<!--                    tooltip: {-->
-<!--                        bodyFont: {-->
-                            size: 12 // Smaller tooltip text
-<!--                        },-->
-<!--                        callbacks: {-->
-<!--                            label: function(context) {-->
-<!--                                return context.dataset.label + ': ' + context.raw + ' €';-->
-<!--                            }-->
-<!--                        }-->
-<!--                    }-->
-<!--                },-->
-<!--                animation: {-->
-<!--                    duration: 1000-->
-<!--                },-->
-<!--                layout: {-->
-<!--                    padding: {-->
-<!--                        top: 10,-->
-<!--                        right: 10,-->
-<!--                        bottom: 10,-->
-<!--                        left: 10-->
-<!--                    }-->
-<!--                }-->
-<!--            }-->
-<!--        });-->
-
-        // Make chart responsive on window resize
-<!--        window.addEventListener('resize', function() {-->
-<!--            weeklyOrderChart.resize();-->
-<!--        });-->
-<!--    });-->
-<!--</script>-->
-<!--@endpush-->
-
-<style>
-    .chart-container {
-        position: relative;
-        height: 350px;
-        width: 100%;
-        min-height: 300px;
-        min-width: 300px; /* Prevent becoming too narrow */
-    }
-    
-    @media (max-width: 992px) {
-        .chart-container {
-            width: 60%; /* Wider on medium screens */
-        }
-    }
-    
-    @media (max-width: 768px) {
-        .chart-container {
-            width: 80%; /* Wider on small screens */
-            height: 300px;
-        }
-    }
-    
-    @media (max-width: 576px) {
-        .chart-container {
-            width: 100%; /* Full width on mobile */
-            height: 250px;
-        }
-    }
-</style>
-
-
-
-<!--end of graph-->
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
 
         <!-- End Stats -->
         <!-- Card -->
@@ -902,7 +458,6 @@
 @endpush
 
 @push('script_2')
-
     <script src="{{ dynamicAsset('public/assets/admin') }}/vendor/chart.js/dist/Chart.min.js"></script>
     <script src="{{ dynamicAsset('public/assets/admin') }}/vendor/chartjs-chart-matrix/dist/chartjs-chart-matrix.min.js">
     </script>
